@@ -1146,7 +1146,10 @@ void create_impl(const CreateCall& call, const Table& bins, Source source) {
         if (chunk.contains("count")) {
             total.add(chunk["count"]);
         }
-        file.flush();
+        // cooler reopens and flushes the file for every chunk so that other
+        // processes may read it in between; within one process a flush would
+        // only evict the partially filled chunks from HDF5's chunk cache and
+        // make every following append decompress and recompress them again.
     };
     if (source.single != nullptr) {
         write_chunk(*source.single);
