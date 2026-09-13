@@ -16,30 +16,64 @@ namespace coolercpp {
 
 namespace {
 
-std::vector<std::string> chrom_labels(const Table& bins) {
+// Groups the rows of the chrom column by label without materialising a label
+// per row: a dense group id per row, and the label of every group.
+struct ChromGroups {
+    std::vector<std::int32_t> ids;
+    std::vector<std::string> names;
+};
+
+ChromGroups chrom_groups(const Table& bins) {
     const Column& chrom = bins["chrom"];
-    if (chrom.dtype() == DType::String || chrom.dtype() == DType::Categorical) {
-        return chrom.labels();
+    ChromGroups groups;
+    groups.ids.resize(chrom.size());
+    if (chrom.dtype() == DType::Categorical) {
+        const CategoricalData& data = chrom.categorical();
+        const std::size_t n = data.categories != nullptr ? data.categories->size() : 0;
+        std::vector<std::int32_t> by_code(n + 1, -1);
+        for (std::size_t i = 0; i < data.codes.size(); ++i) {
+            const std::int32_t code = data.codes[i];
+            const std::size_t slot =
+                (code < 0 || static_cast<std::size_t>(code) >= n) ? n : static_cast<std::size_t>(code);
+            if (by_code[slot] < 0) {
+                by_code[slot] = static_cast<std::int32_t>(groups.names.size());
+                groups.names.push_back(slot == n ? std::string() : (*data.categories)[slot]);
+            }
+            groups.ids[i] = by_code[slot];
+        }
+        return groups;
     }
-    // A numeric chrom column groups by value.
-    std::vector<std::string> out(chrom.size());
-    for (std::size_t i = 0; i < out.size(); ++i) {
-        out[i] = std::to_string(chrom.as_int64(i));
+    std::unordered_map<std::string, std::int32_t> index;
+    for (std::size_t i = 0; i < chrom.size(); ++i) {
+        std::string label = chrom.dtype() == DType::String ? chrom.values<std::string>()[i]
+                                                          : std::to_string(chrom.as_int64(i));
+        const auto [it, inserted] =
+            index.emplace(std::move(label), static_cast<std::int32_t>(groups.names.size()));
+        if (inserted) {
+            groups.names.push_back(it->first);
+        }
+        groups.ids[i] = it->second;
     }
-    return out;
+    return groups;
+}
+
+// The last row of every group.
+std::vector<std::size_t> last_rows(const ChromGroups& groups) {
+    std::vector<std::size_t> last(groups.names.size(), 0);
+    for (std::size_t i = 0; i < groups.ids.size(); ++i) {
+        last[static_cast<std::size_t>(groups.ids[i])] = i;
+    }
+    return last;
 }
 
 }  // namespace
 
 json::Value get_binsize(const Table& bins) {
-    const std::vector<std::string> labels = chrom_labels(bins);
+    const ChromGroups groups = chrom_groups(bins);
+    const std::vector<std::size_t> last_row = last_rows(groups);
     const Column& start = bins["start"];
     const Column& end = bins["end"];
     const DType dtype = result_type(end.dtype(), start.dtype());
-    std::unordered_map<std::string, std::size_t> last_row;
-    for (std::size_t i = 0; i < labels.size(); ++i) {
-        last_row[labels[i]] = i;
-    }
     // (group["end"] - group["start"]).iloc[:-1].unique() accumulated into a
     // set; the result only depends on the set of widths.
     std::set<double> float_widths;
@@ -47,8 +81,8 @@ json::Value get_binsize(const Table& bins) {
     std::set<std::uint64_t> uint_widths;
     const bool floating = is_float(dtype);
     const bool unsigned_result = is_unsigned_integer(dtype);
-    for (std::size_t i = 0; i < labels.size(); ++i) {
-        if (last_row[labels[i]] == i) {
+    for (std::size_t i = 0; i < groups.ids.size(); ++i) {
+        if (last_row[static_cast<std::size_t>(groups.ids[i])] == i) {
             continue;
         }
         if (floating) {
@@ -88,17 +122,15 @@ json::Value get_binsize(const Table& bins) {
 }
 
 ChromSizes get_chromsizes(const Table& bins) {
-    const std::vector<std::string> labels = chrom_labels(bins);
+    const ChromGroups groups = chrom_groups(bins);
+    const std::vector<std::size_t> last_row = last_rows(groups);
     const Column& end = bins["end"];
-    std::unordered_map<std::string, std::size_t> last_row;
-    for (std::size_t i = 0; i < labels.size(); ++i) {
-        last_row[labels[i]] = i;
-    }
     std::vector<std::string> names;
     std::vector<std::int64_t> lengths;
-    for (std::size_t i = 0; i < labels.size(); ++i) {
-        if (last_row[labels[i]] == i) {
-            names.push_back(labels[i]);
+    for (std::size_t i = 0; i < groups.ids.size(); ++i) {
+        const auto group = static_cast<std::size_t>(groups.ids[i]);
+        if (last_row[group] == i) {
+            names.push_back(groups.names[group]);
             lengths.push_back(end.as_int64(i));
         }
     }

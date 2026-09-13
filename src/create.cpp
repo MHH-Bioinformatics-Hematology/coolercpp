@@ -481,36 +481,43 @@ void put_column(h5::File& file, const std::string& group, const std::string& nam
 // ---------------------------------------------------------------------------
 // Pixel validation (cooler.create._ingest._validate_pixels)
 
-// Bin ID column values for comparisons, without copying int64 input.
+// Bin ID column values for comparisons, without copying int32 or int64 input.
 class Ids {
   public:
     explicit Ids(const Column& column) {
         const DType dtype = column.dtype();
         if (dtype == DType::Int64) {
             ints_ = &column.values<std::int64_t>();
+            size_ = ints_->size();
+        } else if (dtype == DType::Int32) {
+            ints32_ = &column.values<std::int32_t>();
+            size_ = ints32_->size();
         } else if (is_float(dtype)) {
             floating_ = true;
             doubles_ = column.as<double>();
+            size_ = doubles_.size();
         } else if (is_numeric(dtype)) {
             owned_ = column.as<std::int64_t>();
             ints_ = &owned_;
+            size_ = owned_.size();
         } else {
             throw TypeError("'<' not supported between instances of 'str' and 'int'");
         }
     }
     [[nodiscard]] bool floating() const noexcept { return floating_; }
-    [[nodiscard]] std::size_t size() const noexcept {
-        return floating_ ? doubles_.size() : ints_->size();
-    }
+    [[nodiscard]] std::size_t size() const noexcept { return size_; }
     [[nodiscard]] double d(std::size_t k) const {
-        return floating_ ? doubles_[k] : static_cast<double>((*ints_)[k]);
+        return floating_ ? doubles_[k] : static_cast<double>(i(k));
     }
-    [[nodiscard]] std::int64_t i(std::size_t k) const { return (*ints_)[k]; }
-    [[nodiscard]] const std::vector<std::int64_t>* ints() const noexcept { return ints_; }
+    [[nodiscard]] std::int64_t i(std::size_t k) const {
+        return ints32_ != nullptr ? static_cast<std::int64_t>((*ints32_)[k]) : (*ints_)[k];
+    }
 
   private:
     bool floating_ = false;
+    std::size_t size_ = 0;
     const std::vector<std::int64_t>* ints_ = nullptr;
+    const std::vector<std::int32_t>* ints32_ = nullptr;
     std::vector<std::int64_t> owned_;
     std::vector<double> doubles_;
 };
