@@ -36,6 +36,7 @@ add_library(coolercpp
     src/json.cpp
     src/numpy_compat.cpp
     src/rangequery.cpp
+    src/rangequery_api.cpp
     src/region.cpp
     src/table.cpp
     src/util.cpp)

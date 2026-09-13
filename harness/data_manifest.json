@@ -39,6 +39,10 @@
   "sha256": "06572ffab73e1b67518d9df28c5c3aebd3cebd99116ccab474ede31360d3aecb",
   "size": 13001960
  },
+ "@hicx/Li_et_al_2015.h5": {
+  "sha256": "e2fc44df156a805243cb83f065ff849a3d61ee60f61e773d61c302e18e80193f",
+  "size": 14215139
+ },
  "@hicx/hicBuildMatrix/multi_small_test_matrix.mcool": {
   "sha256": "c2f7f826c9eda637d68c9c6ce55aebefd0b49bdc9d722e70f68d954744cc961d",
   "size": 441383

@@ -331,6 +331,45 @@ def op_create(spec, output):
     return {"kind": "created"}
 
 
+def op_range_query(spec, output):
+    import cooler
+    from cooler.core import CSRReader, DirectRangeQuery2D, FillLowerRangeQuery2D
+    from cooler.core._rangequery import frame_slice_from_dict
+
+    c = cooler.Cooler(spec["uri"])
+    field = spec["field"]
+    with c.open("r") as grp:
+        reader = CSRReader(grp["pixels"], grp["indexes/bin1_offset"][:])
+        klass = DirectRangeQuery2D if spec["kind"] == "direct" else FillLowerRangeQuery2D
+        engine = klass(reader, field, tuple(spec["bbox"]), spec["chunksize"],
+                       return_index=spec.get("return_index", False))
+        access = spec["access"]
+        if "n_chunks" in access:
+            return value_result(engine.n_chunks)
+        if "chunk" in access:
+            return output.table(frame_slice_from_dict(engine.get_chunk(access["chunk"]), field))
+        if "chunks" in access:
+            return {"kind": "list", "items": [
+                output.table(frame_slice_from_dict(engine.get_chunk(i), field))
+                for i in range(engine.n_chunks)]}
+        if "frame" in access:
+            return output.table(engine.to_frame())
+        if "sparse" in access:
+            return output.matrix(engine.to_sparse_matrix())
+        if "array" in access:
+            return output.matrix(engine.to_array())
+    raise ValueError("unknown range query access")
+
+
+def op_is_cooler(spec, output):
+    import cooler.fileops
+
+    items = []
+    for uri in spec["uris"]:
+        items.append(capture(lambda uri=uri: value_result(bool(cooler.fileops.is_cooler(uri)))))
+    return {"kind": "list", "items": items}
+
+
 OPS = {
     "info": op_info,
     "extent": op_extent,
@@ -340,6 +379,8 @@ OPS = {
     "parse_region": op_parse_region,
     "dump": op_dump,
     "create": op_create,
+    "range_query": op_range_query,
+    "is_cooler": op_is_cooler,
 }
 
 

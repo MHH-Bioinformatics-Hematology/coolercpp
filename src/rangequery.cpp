@@ -57,11 +57,7 @@ std::vector<Id>& ids(IdArray& array) {
     }
 }
 
-struct Task {
-    Bbox bbox;
-    std::pair<std::int64_t, std::int64_t> span;
-    bool transpose = false;
-};
+}  // namespace
 
 PixelDict run_tasks(const CSRReader& reader, const std::string& field, const Bbox& query,
                     const std::vector<Task>& tasks, bool reflect, bool return_index) {
@@ -99,8 +95,6 @@ PixelDict run_tasks(const CSRReader& reader, const std::string& field, const Bbo
     }
     return out;
 }
-
-}  // namespace
 
 CSRReader::CSRReader(const h5::File& file, std::string pixels_group,
                      std::vector<std::int64_t> bin1_offsets)
@@ -281,17 +275,17 @@ void CSRReader::read_into(PixelDict& out, const std::string& field, const Bbox& 
     }
 }
 
-PixelDict direct_query(const CSRReader& reader, const std::string& field, const Bbox& bbox,
-                       std::int64_t chunksize, bool return_index) {
+std::vector<Task> direct_tasks(const CSRReader& reader, const Bbox& bbox,
+                               std::int64_t chunksize) {
     std::vector<Task> tasks;
     for (const auto& span : reader.get_spans(bbox, chunksize)) {
         tasks.push_back(Task{bbox, span, false});
     }
-    return run_tasks(reader, field, bbox, tasks, false, return_index);
+    return tasks;
 }
 
-PixelDict fill_lower_query(const CSRReader& reader, const std::string& field, const Bbox& bbox,
-                           std::int64_t chunksize, bool return_index) {
+std::vector<Task> fill_lower_tasks(const CSRReader& reader, const Bbox& bbox,
+                                   std::int64_t chunksize) {
     std::int64_t i0 = bbox.i0;
     std::int64_t i1 = bbox.i1;
     std::int64_t j0 = bbox.j0;
@@ -321,7 +315,19 @@ PixelDict fill_lower_query(const CSRReader& reader, const std::string& field, co
             tasks.push_back(Task{boxes[b], span, transposed[b]});
         }
     }
-    return run_tasks(reader, field, bbox, tasks, true, return_index);
+    return tasks;
+}
+
+PixelDict direct_query(const CSRReader& reader, const std::string& field, const Bbox& bbox,
+                       std::int64_t chunksize, bool return_index) {
+    return run_tasks(reader, field, bbox, direct_tasks(reader, bbox, chunksize), false,
+                     return_index);
+}
+
+PixelDict fill_lower_query(const CSRReader& reader, const std::string& field, const Bbox& bbox,
+                           std::int64_t chunksize, bool return_index) {
+    return run_tasks(reader, field, bbox, fill_lower_tasks(reader, bbox, chunksize), true,
+                     return_index);
 }
 
 namespace {

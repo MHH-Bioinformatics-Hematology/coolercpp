@@ -44,5 +44,14 @@
    "old": "min(combined_start + bufsize, combined_nnz)",
    "new": "combined_nnz",
    "cases": "^create\\.S\\.unordered_float_merge_epochs$"}
+,
+  {"name": "range_query_chunk_count", "file": "core/_rangequery.py",
+   "old": "num = 2 + (hi - lo) // step",
+   "new": "num = 3 + (hi - lo) // step",
+   "cases": "^RQ\\.S\\.direct\\.(chunks|n_chunks)$"},
+  {"name": "is_cooler_magic", "file": "fileops.py",
+   "old": "    if fmt == MAGIC:\n        keys = (\"chroms\", \"bins\", \"pixels\", \"indexes\")",
+   "new": "    if fmt is not None:\n        keys = (\"chroms\", \"bins\", \"pixels\", \"indexes\")",
+   "cases": "^IC\\.is_cooler$"}
  ]
 }

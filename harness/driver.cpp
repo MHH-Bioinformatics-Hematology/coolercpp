@@ -536,6 +536,56 @@ Value op_dump(const Value& spec, Output& output) {
     return out;
 }
 
+Value op_range_query(const Value& spec, Output& output) {
+    const Cooler c(member(spec, "uri").as_string());
+    const auto& box = member(spec, "bbox").as_array();
+    const coolercpp::RangeQuery2D query(
+        c,
+        member(spec, "kind").as_string() == "direct" ? coolercpp::RangeQuery2D::Kind::Direct
+                                                     : coolercpp::RangeQuery2D::Kind::FillLower,
+        member(spec, "field").as_string(),
+        {box.at(0).as_int(), box.at(1).as_int(), box.at(2).as_int(), box.at(3).as_int()},
+        member(spec, "chunksize").as_int(), flag(spec, "return_index", false));
+    const Value& access = member(spec, "access");
+    if (access.find("n_chunks") != nullptr) {
+        return value_result(Value(static_cast<std::int64_t>(query.n_chunks())));
+    }
+    if (const Value* v = access.find("chunk")) {
+        return output.table(query.get_chunk(static_cast<std::size_t>(v->as_int())));
+    }
+    if (access.find("chunks") != nullptr) {
+        Value items = Value::array({});
+        for (std::size_t i = 0; i < query.n_chunks(); ++i) {
+            items.push_back(output.table(query.get_chunk(i)));
+        }
+        Value out = Value::object();
+        out["kind"] = "list";
+        out["items"] = items;
+        return out;
+    }
+    if (access.find("frame") != nullptr) {
+        return output.table(query.to_frame());
+    }
+    if (access.find("sparse") != nullptr) {
+        return output.matrix(MatrixResult(query.to_sparse_matrix()));
+    }
+    if (access.find("array") != nullptr) {
+        return output.matrix(MatrixResult(query.to_array()));
+    }
+    throw std::runtime_error("unknown range query access");
+}
+
+Value op_is_cooler(const Value& spec) {
+    Value items = Value::array({});
+    for (const Value& uri : member(spec, "uris").as_array()) {
+        items.push_back(capture([&] { return value_result(Value(coolercpp::is_cooler(uri.as_string()))); }));
+    }
+    Value out = Value::object();
+    out["kind"] = "list";
+    out["items"] = items;
+    return out;
+}
+
 Value op_create(const Value& spec) {
     for (const Value& step : member(spec, "steps").as_array()) {
         const Table bins = read_table(member(step, "bins").as_string());
@@ -594,6 +644,8 @@ int main(int argc, char** argv) {
             }
             if (op == "dump") return op_dump(*spec, output);
             if (op == "create") return op_create(*spec);
+            if (op == "range_query") return op_range_query(*spec, output);
+            if (op == "is_cooler") return op_is_cooler(*spec);
             throw std::runtime_error("unknown op " + op);
         });
     } catch (const std::exception& e) {

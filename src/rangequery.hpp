@@ -9,8 +9,8 @@
 // resident, so the peak RSS is the size of the actual result, without the
 // per-task copies and the concatenation.
 
-#ifndef COOLERCPP_RANGEQUERY_HPP
-#define COOLERCPP_RANGEQUERY_HPP
+#ifndef COOLERCPP_DETAIL_RANGEQUERY_HPP
+#define COOLERCPP_DETAIL_RANGEQUERY_HPP
 
 #include <cstdint>
 #include <optional>
@@ -100,6 +100,25 @@ class CSRReader {
     std::vector<std::pair<std::string, DType>> dtypes_;
 };
 
+// One task of a range query engine: a CSRReader call over a row span of a
+// bounding box, optionally transposed.
+struct Task {
+    Bbox bbox;
+    std::pair<std::int64_t, std::int64_t> span;
+    bool transpose = false;
+};
+
+// The task lists of DirectRangeQuery2D and FillLowerRangeQuery2D.
+[[nodiscard]] std::vector<Task> direct_tasks(const CSRReader& reader, const Bbox& bbox,
+                                             std::int64_t chunksize);
+[[nodiscard]] std::vector<Task> fill_lower_tasks(const CSRReader& reader, const Bbox& bbox,
+                                                 std::int64_t chunksize);
+// Runs tasks in order into one result (reflect: the lower triangle filling
+// of FillLowerRangeQuery2D).
+[[nodiscard]] PixelDict run_tasks(const CSRReader& reader, const std::string& field,
+                                  const Bbox& query, const std::vector<Task>& tasks,
+                                  bool reflect, bool return_index);
+
 [[nodiscard]] PixelDict direct_query(const CSRReader& reader, const std::string& field,
                                      const Bbox& bbox, std::int64_t chunksize,
                                      bool return_index);
@@ -113,4 +132,4 @@ class CSRReader {
 
 }  // namespace coolercpp::detail
 
-#endif  // COOLERCPP_RANGEQUERY_HPP
+#endif  // COOLERCPP_DETAIL_RANGEQUERY_HPP

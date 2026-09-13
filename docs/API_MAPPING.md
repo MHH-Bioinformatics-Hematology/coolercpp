@@ -81,6 +81,11 @@ pixel `Table` (`is_pixels()`, `pixels()`), matching the numpy array,
 | `cooler.annotate(pixels, bins, replace=False)` | `annotate(const Table&, const Table& or const RangeSelector1D&, bool replace = false)` |
 | `cooler.create_cooler(cool_uri, bins, pixels, columns, dtypes, metadata, assembly, ordered, symmetric_upper, mode, mergebuf, delete_temp, temp_dir, max_merge, boundscheck, dupcheck, triucheck, ensure_sorted, h5opts, lock)` | `create_cooler(uri, bins, pixels, const CreateOptions&)` where `pixels` is a `Table` (DataFrame or dict) or `PixelChunks` (an iterable of chunks); `CreateOptions` has every keyword except `lock` |
 | `cooler.fileops.list_coolers(filepath)` | `list_coolers(filepath)` |
+| `cooler.fileops.is_cooler(uri)` | `is_cooler(uri)` |
+| `cooler.core.DirectRangeQuery2D(CSRReader(h5["pixels"], h5["indexes/bin1_offset"][:]), field, bbox, chunksize, return_index)` | `RangeQuery2D(clr, RangeQuery2D::Kind::Direct, field, bbox, chunksize, return_index)` |
+| `cooler.core.FillLowerRangeQuery2D(...)` | `RangeQuery2D(clr, RangeQuery2D::Kind::FillLower, ...)` |
+| `engine.n_chunks`, `frame_slice_from_dict(engine.get_chunk(i), field)` | `q.n_chunks()`, `q.get_chunk(i)` |
+| `engine.to_frame()`, `engine.to_sparse_matrix()`, `engine.to_array()` | `q.to_frame()`, `q.to_sparse_matrix()`, `q.to_array()` |
 | `cooler.util.parse_cooler_uri(s)` | `parse_cooler_uri(s)` |
 | `cooler.util.parse_humanized(s)` | `parse_humanized(s)` |
 | `cooler.util.parse_region_string(s)` | `parse_region_string(s)` returning `GenomicRange` |

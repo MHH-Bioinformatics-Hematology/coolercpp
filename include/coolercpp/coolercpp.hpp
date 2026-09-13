@@ -11,6 +11,7 @@
 #include "coolercpp/dtype.hpp"
 #include "coolercpp/errors.hpp"
 #include "coolercpp/json.hpp"
+#include "coolercpp/rangequery.hpp"
 #include "coolercpp/region.hpp"
 #include "coolercpp/table.hpp"
 #include "coolercpp/util.hpp"
