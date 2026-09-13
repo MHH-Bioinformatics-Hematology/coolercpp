@@ -13,6 +13,6 @@
   {"name": "RQ.C1.direct.chunks.band_block", "op": "range_query", "uri": "@hicx/hicTADClassifier/gm12878_chr1.cool", "kind": "direct", "field": "count", "bbox": [0, 3000, 0, 24926], "chunksize": 2000000, "access": {"chunks": true}},
   {"name": "RQ.C1.direct.frame.whole", "op": "range_query", "uri": "@hicx/hicTADClassifier/gm12878_chr1.cool", "kind": "direct", "field": "count", "bbox": [0, 24926, 0, 24926], "chunksize": 10000000, "access": {"frame": true}},
   {"name": "RQ.MS.fill_lower.chunk2", "op": "range_query", "uri": "@hicx/hicBuildMatrix/multi_small_test_matrix.mcool::/resolutions/5000", "kind": "fill_lower", "field": "count", "bbox": [0, 400, 0, 400], "chunksize": 50, "access": {"chunk": 2}},
-  {"name": "IC.is_cooler", "op": "is_cooler", "uris": ["@hicx/small_test_matrix_50kb_res.cool", "@hicx/Li_et_al_2015.h5", "@hicx/matrix.mcool", "@hicx/matrix.mcool::/0", "@hicx/matrix.mcool::0", "@cooler/does_not_exist.cool", "@cooler/toy.chrom.sizes", "@cooler/toy.symm.upper.2.mcool::/resolutions", "@hicx/matrix.mcool::/7"]}
+  {"name": "IC.is_cooler", "op": "is_cooler", "uris": ["@hicx/small_test_matrix_50kb_res.cool", "@hicx/Li_et_al_2015.h5", "@hicx/matrix.mcool", "@hicx/matrix.mcool::/0", "@hicx/matrix.mcool::0", "@cooler/does_not_exist.cool", "@cooler/toy.chrom.sizes", "@cooler/toy.symm.upper.2.mcool::/resolutions", "@cooler/toy.symm.upper.2.mcool", "@hicx/matrix.mcool::/7"]}
  ]
 }

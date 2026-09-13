@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(coolercpp
-    VERSION 0.1.0
+    VERSION 0.2.0
     DESCRIPTION "C++ library compatible with the cooler Python API and file format"
     LANGUAGES CXX)
 
