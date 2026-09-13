@@ -1,0 +1,30 @@
+{
+ "cases": [
+  {"name": "A.info.square", "op": "info", "uri": "@cooler/toy.asymm.2.cool"},
+  {"name": "A.matrix.dense.all", "op": "matrix", "uri": "@cooler/toy.asymm.2.cool", "options": {"balance": false}, "access": {"slice": [[null, null], [null, null]]}},
+  {"name": "A.matrix.sparse.trans", "op": "matrix", "uri": "@cooler/toy.asymm.2.cool", "options": {"balance": false, "sparse": true}, "access": {"fetch": ["chr2", "chr1"]}},
+  {"name": "A.matrix.pixels.all", "op": "matrix", "uri": "@cooler/toy.asymm.2.cool", "options": {"balance": false, "as_pixels": true, "join": true}, "access": {"slice": [[null, null], [null, null]]}},
+  {"name": "V.extent.variable", "op": "extent", "uri": "@cooler/toy.symm.upper.var.cool", "regions": ["chr1", "chr2", "chr1:0-1", "chr1:3-7", ["chr2", 5, null]]},
+  {"name": "V.matrix.dense.all", "op": "matrix", "uri": "@cooler/toy.symm.upper.var.cool", "options": {"balance": false}, "access": {"slice": [[null, null], [null, null]]}},
+  {"name": "V.bins.fetch", "op": "table", "uri": "@cooler/toy.symm.upper.var.cool", "selector": "bins", "access": {"fetch": "chr2:2-9"}},
+  {"name": "MC.info", "op": "info", "uri": "@cooler/manycontigs.1.cool"},
+  {"name": "MC.bins.slice.int_chrom_ids", "op": "table", "uri": "@cooler/manycontigs.1.cool", "selector": "bins", "access": {"slice": [0, 50]}},
+  {"name": "MC.bins.convert_enum_false", "op": "table", "uri": "@cooler/manycontigs.1.cool", "selector": "bins", "selector_kwargs": {"convert_enum": false}, "access": {"slice": [5000, 5010]}},
+  {"name": "MC.pixels.join", "op": "table", "uri": "@cooler/manycontigs.1.cool", "selector": "pixels", "selector_kwargs": {"join": true}, "access": {"slice": [0, 100]}},
+  {"name": "HG.matrix.sparse.all", "op": "matrix", "uri": "@cooler/hg19.GM12878-MboI.matrix.2000kb.cool", "options": {"balance": false, "sparse": true}, "access": {"slice": [[null, null], [null, null]]}},
+  {"name": "HG.extent", "op": "extent", "uri": "@cooler/hg19.GM12878-MboI.matrix.2000kb.cool", "regions": ["chr1", "chrX:10M-20M", "chrM"]},
+  {"name": "Y.matrix.balanced.sparse.all", "op": "matrix", "uri": "@cooler/yeast.10kb.cool", "options": {"sparse": true}, "access": {"slice": [[null, null], [null, null]]}},
+  {"name": "Y.matrix.balanced.dense.trans", "op": "matrix", "uri": "@cooler/yeast.10kb.cool", "options": {}, "access": {"fetch": ["chrI", "chrII"]}},
+  {"name": "Y.matrix.balanced.divisive.dense", "op": "matrix", "uri": "@cooler/yeast.10kb.cool", "options": {"divisive_weights": true}, "access": {"slice": [[0, 300], [0, 300]]}},
+  {"name": "Y.matrix.balanced.pixels.join", "op": "matrix", "uri": "@cooler/yeast.10kb.cool", "options": {"as_pixels": true, "join": true}, "access": {"fetch": ["chrIV:100k-400k", "chrIV"]}},
+  {"name": "Y.matrix.balanced.dense.all", "op": "matrix", "uri": "@cooler/yeast.10kb.cool", "options": {}, "access": {"slice": [[null, null], [null, null]]}},
+  {"name": "TM.list_coolers", "op": "list_coolers", "path": "@cooler/toy.symm.upper.2.mcool"},
+  {"name": "TM.info.resolution4", "op": "info", "uri": "@cooler/toy.symm.upper.2.mcool::resolutions/4"},
+  {"name": "E.missing_file", "op": "info", "uri": "@cooler/does_not_exist.cool", "messages": "type-only"},
+  {"name": "E.bad_uri", "op": "info", "uri": "@cooler/toy.symm.upper.2.cool::a::b"},
+  {"name": "E.group_missing", "op": "info", "uri": "@cooler/toy.symm.upper.2.mcool::/resolutions/3"},
+  {"name": "E.list_coolers_not_hdf5", "op": "list_coolers", "path": "@cooler/toy.chrom.sizes"},
+  {"name": "regions.parse.with_chromsizes", "op": "parse_region", "chromsizes_from": "@cooler/hg19.GM12878-MboI.matrix.2000kb.cool", "regions": ["chr1", "chr1:0-1000", "chr1:1,000-2,000", "chr2:1.5Mb-3.25mb", "chr3:1G-2G", "chrZ", "chr1:500-100", ["chr1", null, 10], ["chr1", 5, null], ["chr1", -5, 10], "chr1:0-999999999999", "chr1:10", "chr1:10-", "chr1:abc", "chr1:1-2 extra", "chr1:1e3-2e3", "chr1:1..5-2", "chr1:  7  -  9  ", "\tchr1\t", "chr1:5-5"]},
+  {"name": "regions.parse.without_chromsizes", "op": "parse_region", "chromsizes_from": null, "regions": ["chr1", "chr1:0-1000", "chr1:10-", ["chr9", 1, 2], "HLA:1-2:3-4", "chr1:1.25k-2.5k"]}
+ ]
+}

@@ -1,0 +1,82 @@
+{
+ "@cooler/hg19.GM12878-MboI.matrix.2000kb.cool": {
+  "sha256": "94543454deda584cb27368c9e622529b5b428c66619771383efbdee57a2bdfd7",
+  "size": 122537
+ },
+ "@cooler/manycontigs.1.cool": {
+  "sha256": "13aa3a8590ea2250358e5836e4bd8432c90ba51af559d386170af8672a3169e5",
+  "size": 1580408
+ },
+ "@cooler/odd.1.cool": {
+  "sha256": "9caeea09b6e221d92c9bfd80c35f424dff2d3eb78eb3cd9724d4918f83dd216b",
+  "size": 41438
+ },
+ "@cooler/toy.asymm.2.cool": {
+  "sha256": "3451d6feaa73e3f5ac93d12413ed5a25882daecd90dd082f6060d4414d15c045",
+  "size": 105674
+ },
+ "@cooler/toy.chrom.sizes": {
+  "sha256": "2ef87458e0d2323f2a835c8fd7d057fc7952d5f69c05d94ad5c5b7e2843583bf",
+  "size": 16
+ },
+ "@cooler/toy.symm.upper.2.cool": {
+  "sha256": "15082579cc1c9586d788d047e0bf16f79d034f6369d276b81d168f81065347b1",
+  "size": 87218
+ },
+ "@cooler/toy.symm.upper.2.mcool": {
+  "sha256": "0dd72fda066d1dc2c3fc7c56373e4257214431ee01101502a85c2e39c9de34e1",
+  "size": 200505
+ },
+ "@cooler/toy.symm.upper.var.cool": {
+  "sha256": "54b9d335ffcc9e0ffad6e3e205c67b82de866ad267d5e04a7fd11a9145ac5cd2",
+  "size": 42451
+ },
+ "@cooler/yeast.10kb.cool": {
+  "sha256": "67434919759c5b389227e2887b928f873f39f6c68b398e225e818838769a2104",
+  "size": 1773757
+ },
+ "@hicx/Li_et_al_2015.cool": {
+  "sha256": "06572ffab73e1b67518d9df28c5c3aebd3cebd99116ccab474ede31360d3aecb",
+  "size": 13001960
+ },
+ "@hicx/hicBuildMatrix/multi_small_test_matrix.mcool": {
+  "sha256": "c2f7f826c9eda637d68c9c6ce55aebefd0b49bdc9d722e70f68d954744cc961d",
+  "size": 441383
+ },
+ "@hicx/hicBuildMatrix/restrictionFile/R1_R2_restrictionFile.cool": {
+  "sha256": "96a4c72cf084b21874e2b2973d65bbf4c0578b7cf8b0aab0ffd92b2cef375636",
+  "size": 1771771
+ },
+ "@hicx/hicConvertFormat/small_test_matrix_chr4.cool": {
+  "sha256": "08c41d94ba332c572924cf06b27070e44c15c48388abf311ed99a929cc493dcf",
+  "size": 38908
+ },
+ "@hicx/hicCorrectMatrix/gm12878_KR.cool": {
+  "sha256": "aacaeaeb52f0e3bb01d332432b617ef5452a3af9bfeffe9cb16cab93dfa30758",
+  "size": 2130904
+ },
+ "@hicx/hicDetectLoops/GSE63525_GM12878_insitu_primary_2_5mb.cool": {
+  "sha256": "1f6e27d0005019874e6f8af012de8a6e1f76791c77f9862fd40e36e4602900f0",
+  "size": 1602554
+ },
+ "@hicx/hicDifferentialTAD/GSM2644947_Auxin2days-R1.100000_chr1_chr2.cool": {
+  "sha256": "4b1eaed2614adf1acc8f131deb83e69d35b5d5065ae57a7ac727b3e43352cd41",
+  "size": 28429077
+ },
+ "@hicx/hicPCA/pearson_norm.cool": {
+  "sha256": "36263ef49fbbdebe5321bcb66694d2076bdba5756cf553526fcd4e90804c14d1",
+  "size": 14106011
+ },
+ "@hicx/hicTADClassifier/gm12878_chr1.cool": {
+  "sha256": "06db58bad3453ad2b67d7bceaf9dcbf14cfcabd5040bcc8a82c6f129228f93d7",
+  "size": 79370717
+ },
+ "@hicx/matrix.mcool": {
+  "sha256": "ab50c72cb1dc1867530e10ee4ae015784963965e372ef0293185575bb3d392bc",
+  "size": 2444203
+ },
+ "@hicx/small_test_matrix_50kb_res.cool": {
+  "sha256": "9cab222a33ad836333075e8e418fabd9cdb8927b51783d3b7885f5a02ae8330c",
+  "size": 105170
+ }
+}
