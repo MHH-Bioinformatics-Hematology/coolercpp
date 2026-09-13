@@ -13,6 +13,7 @@
 
 #include "coolercpp/json.hpp"
 #include "coolercpp/table.hpp"
+#include "coolercpp/version.hpp"
 
 namespace coolercpp {
 
@@ -58,9 +59,11 @@ struct CreateOptions {
     // A fixed value for the "creation-date" attribute, for reproducible
     // files. nullopt writes datetime.now().isoformat() as cooler does.
     std::optional<std::string> creation_date;
-    // The "generated-by" attribute. cooler writes "cooler-<version>"; the
-    // default keeps files indistinguishable from cooler 0.10.2 output.
-    std::string generated_by = "cooler-0.10.2";
+    // The "generated-by" attribute: the program that wrote the file. cooler
+    // writes "cooler-<version>"; coolercpp names itself unless the caller
+    // passes another string (an application writing through coolercpp may
+    // pass its own identity).
+    std::string generated_by = std::string("coolercpp-") + kVersion;
 };
 
 // create_cooler with a DataFrame or dict of columns: the table is sorted by

@@ -14,9 +14,11 @@ import os
 import h5py
 import numpy as np
 
-# Attributes whose value changes from run to run and is therefore not
-# compared. Their presence and datatype still are.
-NORMALIZED_ATTRIBUTES = ["creation-date"]
+# Attributes whose value is not compared; their presence and datatype still
+# are. creation-date changes from run to run; generated-by names the program
+# that wrote the file (cooler-0.10.2 on the Python side, coolercpp-<version>
+# on the C++ side).
+NORMALIZED_ATTRIBUTES = ["creation-date", "generated-by"]
 
 # Float agreement classes, strictest first. The owner's gate is three
 # significant digits per item.

@@ -58,7 +58,9 @@ that runs the same call through cooler and through coolercpp.
    from categorical bin columns use the pandas width.
 5. `create_cooler` has no `lock` argument and accepts no dask frames.
    `CreateOptions::creation_date` and `CreateOptions::generated_by` exist in
-   addition, for reproducible files.
+   addition, for reproducible files and for naming the writing program.
+8. The `generated-by` attribute names coolercpp (`coolercpp-<version>`)
+   instead of `cooler-0.10.2`, unless the caller passes another string.
 6. Groups are created without object modification times (h5py records them on
    groups), so that two runs with the same `creation_date` produce identical
    bytes. This only affects HDF5 object header bytes, not the object tree,

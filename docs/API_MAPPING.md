@@ -91,7 +91,7 @@ pixel `Table` (`is_pixels()`, `pixels()`), matching the numpy array,
 
 `CreateOptions` extensions that cooler does not have: `creation_date` (a fixed
 value for reproducible files) and `generated_by` (defaults to
-`"cooler-0.10.2"`). `h5opts` is an ordered list of `(key, H5OptValue)` pairs;
+`"coolercpp-<version>"`; the harness does not compare this attribute's value). `h5opts` is an ordered list of `(key, H5OptValue)` pairs;
 a tuple such as `(None,)` is a vector in which `-1` stands for `None`.
 
 ## The table type
