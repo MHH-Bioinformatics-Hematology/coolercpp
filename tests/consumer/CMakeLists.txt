@@ -6,7 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_RPATH_USE_LINK_PATH TRUE)
 
 if(CONSUME STREQUAL "find_package")
-    find_package(coolercpp 0.2 REQUIRED)
+    # The major.minor version of the library under test, passed by
+    # run_consumer.cmake, so a version bump cannot leave this request stale.
+    if(NOT DEFINED EXPECTED_VERSION)
+        message(FATAL_ERROR "EXPECTED_VERSION is required")
+    endif()
+    find_package(coolercpp ${EXPECTED_VERSION} REQUIRED)
 elseif(CONSUME STREQUAL "FetchContent")
     include(FetchContent)
     FetchContent_Declare(coolercpp SOURCE_DIR "${COOLERCPP_SOURCE}")

@@ -38,5 +38,6 @@ add_test(NAME coolercpp_consumer
         -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/consumer
         -DPREFIX_PATH=${CMAKE_PREFIX_PATH}
         -DGENERATOR=${CMAKE_GENERATOR}
+        -DEXPECTED_VERSION=${coolercpp_VERSION_MAJOR}.${coolercpp_VERSION_MINOR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/consumer/run_consumer.cmake)
 set_tests_properties(coolercpp_consumer PROPERTIES TIMEOUT 900)
