@@ -370,7 +370,23 @@ def op_is_cooler(spec, output):
     return {"kind": "list", "items": items}
 
 
+def op_dataset_read(spec, output):
+    import cooler
+
+    c = cooler.Cooler(spec["uri"])
+    dtype = np.dtype(spec["dtype"])
+    items = []
+    with c.open("r") as grp:
+        dset = grp[spec["path"]]
+        for lo, hi in spec["slices"]:
+            out = np.empty(max(hi - lo, 0), dtype=dtype)
+            out[:] = dset[lo:hi]
+            items.append(output.table(pd.DataFrame({"values": out})))
+    return {"kind": "list", "items": items}
+
+
 OPS = {
+    "dataset_read": op_dataset_read,
     "info": op_info,
     "extent": op_extent,
     "offset": op_extent,

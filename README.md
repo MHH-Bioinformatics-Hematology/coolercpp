@@ -39,7 +39,7 @@ cmake --install build --prefix /opt/coolercpp
 Downstream projects use either
 
 ```cmake
-find_package(coolercpp 0.2 REQUIRED)
+find_package(coolercpp 0.3 REQUIRED)
 target_link_libraries(app PRIVATE coolercpp::coolercpp)
 ```
 

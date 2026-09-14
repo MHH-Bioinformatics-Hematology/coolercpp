@@ -48,6 +48,60 @@ RangeQuery2D::RangeQuery2D(const Cooler& clr, Kind kind, std::string field,
 
 std::size_t RangeQuery2D::n_chunks() const noexcept { return impl_->tasks.size(); }
 
+struct DatasetReader::Impl {
+    std::unique_ptr<h5::File> file;
+    h5::Dataset dataset;
+    std::int64_t length = 0;
+
+    template <typename T>
+    void read(std::int64_t lo, std::int64_t hi, std::span<T> out) const {
+        if (lo < 0 || hi < lo || hi > length) {
+            throw IndexError("rows [" + std::to_string(lo) + ", " + std::to_string(hi) +
+                             ") are outside " + dataset.path() + " of length " +
+                             std::to_string(length));
+        }
+        const auto n = static_cast<std::size_t>(hi - lo);
+        if (out.size() != n) {
+            throw ValueError("buffer of " + std::to_string(out.size()) + " values for " +
+                             std::to_string(n) + " rows of " + dataset.path());
+        }
+        if (n == 0) {
+            return;
+        }
+        const h5::Handle mem = h5::memory_type(dtype_v<T>);
+        dataset.read_raw(static_cast<std::size_t>(lo), n, mem.get(), out.data());
+    }
+};
+
+DatasetReader::DatasetReader(const Cooler& clr, const std::string& path) {
+    auto impl = std::make_shared<Impl>();
+    impl->file = std::make_unique<h5::File>(clr.filename(), h5::Mode::Read);
+    impl->dataset = impl->file->open_dataset(join_path(clr.root(), path));
+    const h5::TypeDesc type = impl->dataset.type();
+    if (type.kind != h5::TypeDesc::Kind::Integer && type.kind != h5::TypeDesc::Kind::Float &&
+        type.kind != h5::TypeDesc::Kind::Enum && type.kind != h5::TypeDesc::Kind::Bool) {
+        throw TypeError(impl->dataset.path() + " is not a numeric dataset");
+    }
+    impl->length = static_cast<std::int64_t>(impl->dataset.length());
+    impl_ = std::move(impl);
+}
+
+std::int64_t DatasetReader::size() const noexcept { return impl_->length; }
+
+void DatasetReader::read_into(std::int64_t lo, std::int64_t hi,
+                              std::span<std::int32_t> out) const {
+    impl_->read(lo, hi, out);
+}
+
+void DatasetReader::read_into(std::int64_t lo, std::int64_t hi,
+                              std::span<std::int64_t> out) const {
+    impl_->read(lo, hi, out);
+}
+
+void DatasetReader::read_into(std::int64_t lo, std::int64_t hi, std::span<double> out) const {
+    impl_->read(lo, hi, out);
+}
+
 Table RangeQuery2D::get_chunk(std::size_t i) const {
     if (i >= impl_->tasks.size()) {
         throw IndexError("");

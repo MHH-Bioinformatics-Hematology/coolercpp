@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 
 #include "coolercpp/api.hpp"
@@ -51,6 +52,34 @@ class RangeQuery2D {
     [[nodiscard]] Table to_frame() const;
     [[nodiscard]] SparseMatrix to_sparse_matrix() const;
     [[nodiscard]] DenseMatrix to_array() const;
+
+  private:
+    struct Impl;
+    std::shared_ptr<const Impl> impl_;
+};
+
+// One dataset of a cooler group read slice by slice into buffers the caller
+// owns, for whole-table reads that need no range query. In Python:
+//
+//   with clr.open("r") as grp:
+//       dset = grp[path]                 # e.g. "pixels/bin2_id"
+//       out[:] = dset[lo:hi]             # out preallocated with dtype T
+//
+// The object keeps the file open until it is destroyed. HDF5 converts the
+// stored type to T; values outside the range of T saturate, where numpy's
+// assignment would wrap them. KeyError when the dataset does not exist,
+// TypeError when it is not numeric, IndexError when [lo, hi) is not inside
+// the dataset (Python slicing would clip), ValueError when out.size() is not
+// hi - lo.
+class DatasetReader {
+  public:
+    DatasetReader(const Cooler& clr, const std::string& path);
+
+    // len(dset)
+    [[nodiscard]] std::int64_t size() const noexcept;
+    void read_into(std::int64_t lo, std::int64_t hi, std::span<std::int32_t> out) const;
+    void read_into(std::int64_t lo, std::int64_t hi, std::span<std::int64_t> out) const;
+    void read_into(std::int64_t lo, std::int64_t hi, std::span<double> out) const;
 
   private:
     struct Impl;

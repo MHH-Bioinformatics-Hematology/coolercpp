@@ -575,6 +575,41 @@ Value op_range_query(const Value& spec, Output& output) {
     throw std::runtime_error("unknown range query access");
 }
 
+Value op_dataset_read(const Value& spec, Output& output) {
+    const Cooler c(member(spec, "uri").as_string());
+    const coolercpp::DatasetReader reader(c, member(spec, "path").as_string());
+    const DType dtype = coolercpp::dtype_from_name(member(spec, "dtype").as_string());
+    Value items = Value::array({});
+    for (const Value& slice : member(spec, "slices").as_array()) {
+        const std::int64_t lo = slice.as_array().at(0).as_int();
+        const std::int64_t hi = slice.as_array().at(1).as_int();
+        const auto n = static_cast<std::size_t>(std::max<std::int64_t>(hi - lo, 0));
+        Column column;
+        if (dtype == DType::Int32) {
+            std::vector<std::int32_t> buffer(n);
+            reader.read_into(lo, hi, std::span<std::int32_t>(buffer));
+            column = Column(std::move(buffer));
+        } else if (dtype == DType::Int64) {
+            std::vector<std::int64_t> buffer(n);
+            reader.read_into(lo, hi, std::span<std::int64_t>(buffer));
+            column = Column(std::move(buffer));
+        } else if (dtype == DType::Float64) {
+            std::vector<double> buffer(n);
+            reader.read_into(lo, hi, std::span<double>(buffer));
+            column = Column(std::move(buffer));
+        } else {
+            throw std::runtime_error("dataset_read supports int32, int64 and float64");
+        }
+        Table table;
+        table.set("values", std::move(column));
+        items.push_back(output.table(table));
+    }
+    Value out = Value::object();
+    out["kind"] = "list";
+    out["items"] = items;
+    return out;
+}
+
 Value op_is_cooler(const Value& spec) {
     Value items = Value::array({});
     for (const Value& uri : member(spec, "uris").as_array()) {
@@ -646,6 +681,7 @@ int main(int argc, char** argv) {
             if (op == "create") return op_create(*spec);
             if (op == "range_query") return op_range_query(*spec, output);
             if (op == "is_cooler") return op_is_cooler(*spec);
+            if (op == "dataset_read") return op_dataset_read(*spec, output);
             throw std::runtime_error("unknown op " + op);
         });
     } catch (const std::exception& e) {

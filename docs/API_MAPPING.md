@@ -85,6 +85,7 @@ pixel `Table` (`is_pixels()`, `pixels()`), matching the numpy array,
 | `cooler.core.DirectRangeQuery2D(CSRReader(h5["pixels"], h5["indexes/bin1_offset"][:]), field, bbox, chunksize, return_index)` | `RangeQuery2D(clr, RangeQuery2D::Kind::Direct, field, bbox, chunksize, return_index)` |
 | `cooler.core.FillLowerRangeQuery2D(...)` | `RangeQuery2D(clr, RangeQuery2D::Kind::FillLower, ...)` |
 | `engine.n_chunks`, `frame_slice_from_dict(engine.get_chunk(i), field)` | `q.n_chunks()`, `q.get_chunk(i)` |
+| `with clr.open("r") as grp: out[:] = grp[path][lo:hi]` (out preallocated as int32, int64 or float64) | `DatasetReader(clr, path).read_into(lo, hi, std::span<T>(out))`; `len(grp[path])` is `size()`. An extension for whole-table reads without a range query: [lo, hi) must lie inside the dataset and out-of-range values saturate |
 | `engine.to_frame()`, `engine.to_sparse_matrix()`, `engine.to_array()` | `q.to_frame()`, `q.to_sparse_matrix()`, `q.to_array()` |
 | `cooler.util.parse_cooler_uri(s)` | `parse_cooler_uri(s)` |
 | `cooler.util.parse_humanized(s)` | `parse_humanized(s)` |
