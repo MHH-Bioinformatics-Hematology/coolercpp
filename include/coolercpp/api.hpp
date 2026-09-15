@@ -259,6 +259,17 @@ class Cooler {
     [[nodiscard]] RangeSelector1D pixels(bool join = false, bool convert_enum = true) const;
     [[nodiscard]] RangeSelector2D matrix(const MatrixOptions& options = {}) const;
 
+    // The block of absolute bin indices [i0, i1) x [j0, j1), as cooler's
+    // clr.matrix()[i0:i1, j0:j1] returns it (symmetric coolers are filled on
+    // both sides). Added for downstream tile servers that address the genome
+    // by absolute bin rather than by named region.
+    [[nodiscard]] MatrixResult matrix_block(const std::string& field, std::int64_t i0,
+                                            std::int64_t i1, std::int64_t j0,
+                                            std::int64_t j1,
+                                            const MatrixOptions& options = {}) const {
+        return query_matrix(field, i0, i1, j0, j1, options);
+    }
+
   private:
     [[nodiscard]] std::pair<std::int64_t, std::int64_t> region_extent(const Region& region) const;
     [[nodiscard]] MatrixResult query_matrix(const std::string& field, std::int64_t i0,
