@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(coolercpp
-    VERSION 0.3.0
+    VERSION 0.4.0
     DESCRIPTION "C++ library compatible with the cooler Python API and file format"
     LANGUAGES CXX)
 
@@ -24,17 +24,21 @@ if(PROJECT_IS_TOP_LEVEL)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
-# The only native dependency: the HDF5 C library. zlib reaches coolercpp
-# through HDF5's deflate filter and is not linked directly.
+# Native dependencies: the HDF5 C library and zlib.
 find_package(HDF5 REQUIRED COMPONENTS C)
+# The threaded chunk writer and reader (fastio) filter chunks themselves.
+find_package(ZLIB REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(coolercpp
     src/api.cpp
     src/create.cpp
     src/dtype.cpp
+    src/fastio.cpp
     src/h5.cpp
     src/json.cpp
     src/numpy_compat.cpp
+    src/parallel.cpp
     src/rangequery.cpp
     src/rangequery_api.cpp
     src/region.cpp
@@ -50,7 +54,7 @@ target_include_directories(coolercpp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # HDF5 is an implementation detail: no public header includes hdf5.h.
-target_link_libraries(coolercpp PRIVATE HDF5::HDF5)
+target_link_libraries(coolercpp PRIVATE HDF5::HDF5 ZLIB::ZLIB PUBLIC Threads::Threads)
 set_target_properties(coolercpp PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     VERSION ${PROJECT_VERSION}
