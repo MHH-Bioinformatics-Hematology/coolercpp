@@ -10,6 +10,7 @@
 #include "coolercpp/create.hpp"
 #include "coolercpp/dtype.hpp"
 #include "coolercpp/errors.hpp"
+#include "coolercpp/fileops.hpp"
 #include "coolercpp/json.hpp"
 #include "coolercpp/rangequery.hpp"
 #include "coolercpp/region.hpp"

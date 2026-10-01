@@ -1,5 +1,4 @@
-// The public range query engines and cooler.fileops.is_cooler (cooler 0.10.2,
-// BSD-3-Clause).
+// The public range query engines (cooler 0.10.2, BSD-3-Clause).
 
 #include "coolercpp/rangequery.hpp"
 
@@ -131,41 +130,6 @@ DenseMatrix RangeQuery2D::to_array() const {
         detail::run_tasks(*impl_->reader, impl_->field, impl_->bbox, impl_->tasks,
                           impl_->reflect, impl_->return_index),
         impl_->bbox);
-}
-
-bool is_cooler(const std::string& uri) {
-    const auto [path, group] = parse_cooler_uri(uri);
-    if (!h5::is_hdf5(path)) {
-        return false;
-    }
-    const h5::File file(path, h5::Mode::Read);
-    if (!file.exists(group)) {
-        // h5py f[path]: HDF5 names the missing object when only the last
-        // component is absent.
-        const std::size_t slash = group.find_last_of('/');
-        const std::string parent = slash == 0 ? "/" : group.substr(0, slash);
-        if (file.exists(parent) && slash + 1 < group.size()) {
-            throw KeyError("Unable to synchronously open object (object '" +
-                           group.substr(slash + 1) + "' doesn't exist)");
-        }
-        throw KeyError("Unable to synchronously open object (component not found)");
-    }
-    for (const auto& [key, value] : file.attributes(group)) {
-        if (key == "format") {
-            if (!value.is_string() || value.as_string() != "HDF5::Cooler") {
-                return false;
-            }
-            bool complete = file.is_group(group);
-            for (const char* name : {"chroms", "bins", "pixels", "indexes"}) {
-                complete = complete && file.exists(join_path(group, name));
-            }
-            if (!complete) {
-                warn("Cooler path " + group + " appears to be corrupt");
-            }
-            return true;
-        }
-    }
-    return false;
 }
 
 }  // namespace coolercpp

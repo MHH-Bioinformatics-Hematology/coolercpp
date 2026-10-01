@@ -1,5 +1,5 @@
 // Port of cooler/api.py, cooler/core/_selectors.py, cooler/core/_tableops.py
-// (get) and cooler/fileops.py (list_coolers) of cooler 0.10.2
+// (get) of cooler 0.10.2
 // (BSD-3-Clause).
 
 #include "coolercpp/api.hpp"
@@ -11,6 +11,7 @@
 #include <set>
 
 #include "coolercpp/errors.hpp"
+#include "coolercpp/fileops.hpp"
 #include "coolercpp/util.hpp"
 #include "h5.hpp"
 #include "numpy_compat.hpp"
@@ -863,7 +864,7 @@ MatrixResult Cooler::query_matrix(const std::string& field, std::int64_t i0, std
 }
 
 // ---------------------------------------------------------------------------
-// annotate, list_coolers
+// annotate
 
 Table annotate(const Table& pixels, const Table& bins, bool replace) {
     const auto loc_slice = [&bins](std::int64_t beg, std::optional<std::int64_t> end) {
@@ -903,40 +904,6 @@ Table annotate(const Table& pixels, const RangeSelector1D& bins, bool replace) {
         return bins[Slice{beg, stop, std::nullopt}];
     };
     return annotate_impl(pixels, bins.size(), loc_slice, replace);
-}
-
-std::vector<std::string> list_coolers(const std::string& filepath) {
-    if (!h5::is_hdf5(filepath)) {
-        throw OSError("'" + filepath + "' is not an HDF5 file.");
-    }
-    const h5::File file(filepath, h5::Mode::Read);
-    std::vector<std::string> listing;
-    const auto check = [&](const std::string& path) {
-        for (const auto& [key, value] : file.attributes(path)) {
-            if (key == "format" && value.is_string() && value.as_string() == "HDF5::Cooler") {
-                bool complete = file.is_group(path);
-                for (const char* name : {"chroms", "bins", "pixels", "indexes"}) {
-                    complete = complete && file.exists(join_path(path, name));
-                }
-                if (!complete) {
-                    warn("Cooler path " + path + " appears to be corrupt");
-                }
-                listing.push_back(path);
-            }
-        }
-    };
-    std::function<void(const std::string&)> visit = [&](const std::string& group) {
-        for (const std::string& name : file.keys(group)) {
-            const std::string child = join_path(group, name);
-            check(child);
-            if (file.is_group(child)) {
-                visit(child);
-            }
-        }
-    };
-    check("/");
-    visit("/");
-    return natsorted(std::move(listing));
 }
 
 }  // namespace coolercpp

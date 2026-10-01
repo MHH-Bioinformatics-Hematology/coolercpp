@@ -76,6 +76,12 @@ struct TypeDesc {
 };
 [[nodiscard]] TypeDesc describe_type(hid_t type);
 
+// What numpy prints for the dtype h5py gives a dataset of this type:
+// "int32", "float64", "|S9" for a fixed width string, "object" for a variable
+// length string, "bool" for h5py's bool enum and the base integer name for an
+// enum such as the chrom column. Used by the tree listing of cooler.fileops.
+[[nodiscard]] std::string numpy_dtype_name(const TypeDesc& desc);
+
 // A new copy of the little endian file type h5py creates for a numpy dtype;
 // Bool is h5py's enum of int8 {FALSE: 0, TRUE: 1}.
 [[nodiscard]] Handle file_type(DType dtype);
@@ -122,6 +128,8 @@ class Dataset {
     [[nodiscard]] hid_t id() const noexcept { return handle_.get(); }
     [[nodiscard]] const std::string& path() const noexcept { return path_; }
     [[nodiscard]] std::size_t length() const;
+    // The full shape; every dataset cooler writes is one dimensional.
+    [[nodiscard]] std::vector<std::size_t> shape() const;
     [[nodiscard]] TypeDesc type() const;
 
     // Reads rows [lo, lo + n) converted into `mem_type`.
@@ -175,6 +183,26 @@ class File {
     void create_group(const std::string& path);
     // del group[name]; a missing name raises KeyError.
     void remove(const std::string& path);
+
+    // The kind of link stored under a name, without resolving it (h5py
+    // Group.get(name, getlink=True)).
+    enum class LinkType { Missing, Hard, Soft, External, Other };
+    [[nodiscard]] LinkType link_type(const std::string& path) const;
+    // group[name] = other_object in h5py: a hard link to an object of this
+    // file, with intermediate groups created as h5py's lcpl does.
+    void hard_link(const std::string& link_path, const std::string& target_path);
+    // group[name] = h5py.SoftLink(target).
+    void soft_link(const std::string& link_path, const std::string& target_path);
+    // group[name] = h5py.ExternalLink(file, target).
+    void external_link(const std::string& link_path, const std::string& file,
+                       const std::string& target_path);
+    // Group.copy within one file, and into another open file.
+    void copy(const std::string& source_path, const std::string& dest_path);
+    void copy(const std::string& source_path, File& dest, const std::string& dest_path);
+    // dst.attrs.update(src.attrs): every attribute of the source object
+    // written on the destination object with its own datatype and shape.
+    void copy_attributes(const File& source, const std::string& source_path,
+                         const std::string& dest_path);
     // Creates a one dimensional dataset. HDF5 failures raise ValueError, which
     // is what h5py raises for, for example, an enum header that is too large.
     Dataset create_dataset(const std::string& path, hid_t type, const DatasetCreate& options);

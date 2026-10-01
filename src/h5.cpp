@@ -261,6 +261,15 @@ TypeDesc describe_type(hid_t type) {
     return desc;
 }
 
+std::string numpy_dtype_name(const TypeDesc& desc) {
+    switch (desc.kind) {
+        case TypeDesc::Kind::FixedString: return "|S" + std::to_string(desc.size);
+        // h5py gives a variable length string dataset the numpy object dtype.
+        case TypeDesc::Kind::VlenString: return "object";
+        default: return std::string(dtype_name(desc.dtype));
+    }
+}
+
 Handle file_type(DType dtype) {
     hid_t base = -1;
     switch (dtype) {
@@ -396,6 +405,20 @@ std::size_t Dataset::length() const {
         return 1;
     }
     return static_cast<std::size_t>(dims[0]);
+}
+
+std::vector<std::size_t> Dataset::shape() const {
+    const Handle space(H5Dget_space(id()), Handle::Kind::DataSpace);
+    hsize_t dims[H5S_MAX_RANK];
+    const int rank = H5Sget_simple_extent_dims(space.get(), dims, nullptr);
+    if (rank < 0) {
+        throw OSError("cannot read the extent of " + path_);
+    }
+    std::vector<std::size_t> out;
+    for (int k = 0; k < rank; ++k) {
+        out.push_back(static_cast<std::size_t>(dims[k]));
+    }
+    return out;
 }
 
 TypeDesc Dataset::type() const {
@@ -718,6 +741,108 @@ void File::remove(const std::string& path) {
     }
     if (H5Ldelete(id(), path.c_str(), H5P_DEFAULT) < 0) {
         throw KeyError("Couldn't delete link (" + path + ")");
+    }
+}
+
+File::LinkType File::link_type(const std::string& path) const {
+    if (path == "/") {
+        return LinkType::Hard;
+    }
+    H5L_info2_t info{};
+    if (H5Lget_info2(id(), path.c_str(), &info, H5P_DEFAULT) < 0) {
+        return LinkType::Missing;
+    }
+    switch (info.type) {
+        case H5L_TYPE_HARD: return LinkType::Hard;
+        case H5L_TYPE_SOFT: return LinkType::Soft;
+        case H5L_TYPE_EXTERNAL: return LinkType::External;
+        default: return LinkType::Other;
+    }
+}
+
+void File::hard_link(const std::string& link_path, const std::string& target_path) {
+    const Handle lcpl = link_create_plist();
+    if (H5Lcreate_hard(id(), target_path.c_str(), id(), link_path.c_str(), lcpl.get(),
+                       H5P_DEFAULT) < 0) {
+        throw OSError("Unable to synchronously create hard link (" + link_path + ")");
+    }
+}
+
+void File::soft_link(const std::string& link_path, const std::string& target_path) {
+    const Handle lcpl = link_create_plist();
+    if (H5Lcreate_soft(target_path.c_str(), id(), link_path.c_str(), lcpl.get(), H5P_DEFAULT) < 0) {
+        throw OSError("Unable to synchronously create soft link (" + link_path + ")");
+    }
+}
+
+void File::external_link(const std::string& link_path, const std::string& file,
+                         const std::string& target_path) {
+    const Handle lcpl = link_create_plist();
+    if (H5Lcreate_external(file.c_str(), target_path.c_str(), id(), link_path.c_str(), lcpl.get(),
+                           H5P_DEFAULT) < 0) {
+        throw OSError("Unable to synchronously create external link (" + link_path + ")");
+    }
+}
+
+void File::copy(const std::string& source_path, const std::string& dest_path) {
+    copy(source_path, *this, dest_path);
+}
+
+void File::copy(const std::string& source_path, File& dest, const std::string& dest_path) {
+    const Handle lcpl = link_create_plist();
+    if (H5Ocopy(id(), source_path.c_str(), dest.id(), dest_path.c_str(), H5P_DEFAULT, lcpl.get()) <
+        0) {
+        throw RuntimeError("Unable to synchronously copy object (" + source_path + " to " +
+                           dest_path + ")");
+    }
+}
+
+void File::copy_attributes(const File& source, const std::string& source_path,
+                           const std::string& dest_path) {
+    const Handle from(H5Oopen(source.id(), source_path.c_str(), H5P_DEFAULT), Handle::Kind::Object);
+    const Handle to(H5Oopen(id(), dest_path.c_str(), H5P_DEFAULT), Handle::Kind::Object);
+    if (!from.valid() || !to.valid()) {
+        throw KeyError("Unable to synchronously open object (component not found)");
+    }
+    H5O_info2_t info{};
+    if (H5Oget_info3(from.get(), &info, H5O_INFO_NUM_ATTRS) < 0) {
+        throw OSError("cannot count the attributes of " + source_path);
+    }
+    for (hsize_t i = 0; i < info.num_attrs; ++i) {
+        const Handle attr(H5Aopen_by_idx(from.get(), ".", H5_INDEX_NAME, H5_ITER_INC, i,
+                                         H5P_DEFAULT, H5P_DEFAULT),
+                          Handle::Kind::Attribute);
+        if (!attr.valid()) {
+            continue;
+        }
+        const ssize_t name_length = H5Aget_name(attr.get(), 0, nullptr);
+        std::string name(static_cast<std::size_t>(std::max<ssize_t>(name_length, 0)), '\0');
+        H5Aget_name(attr.get(), name.size() + 1, name.data());
+        const Handle type(H5Aget_type(attr.get()), Handle::Kind::DataType);
+        const Handle space(H5Aget_space(attr.get()), Handle::Kind::DataSpace);
+        // The value is moved in the attribute's own file type, so a copy keeps
+        // the datatype and shape h5py would have written again from the numpy
+        // value it reads.
+        const std::size_t bytes = H5Tget_size(type.get()) *
+                                  static_cast<std::size_t>(std::max<hssize_t>(
+                                      H5Sget_simple_extent_npoints(space.get()), 0));
+        std::vector<unsigned char> buffer(std::max<std::size_t>(bytes, 1));
+        if (H5Aexists(to.get(), name.c_str()) > 0) {
+            H5Adelete(to.get(), name.c_str());
+        }
+        const Handle copy(H5Acreate2(to.get(), name.c_str(), type.get(), space.get(), H5P_DEFAULT,
+                                     H5P_DEFAULT),
+                          Handle::Kind::Attribute);
+        if (!copy.valid()) {
+            throw OSError("Unable to synchronously create attribute (" + name + ")");
+        }
+        if (bytes != 0) {
+            if (H5Aread(attr.get(), type.get(), buffer.data()) < 0 ||
+                H5Awrite(copy.get(), type.get(), buffer.data()) < 0) {
+                throw OSError("cannot copy the attribute " + name);
+            }
+            H5Treclaim(type.get(), space.get(), H5P_DEFAULT, buffer.data());
+        }
     }
 }
 

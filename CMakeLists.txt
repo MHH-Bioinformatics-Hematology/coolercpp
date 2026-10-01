@@ -35,6 +35,7 @@ add_library(coolercpp
     src/create.cpp
     src/dtype.cpp
     src/fastio.cpp
+    src/fileops.cpp
     src/h5.cpp
     src/json.cpp
     src/numpy_compat.cpp

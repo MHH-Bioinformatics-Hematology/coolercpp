@@ -313,22 +313,70 @@ def op_dump(spec, output):
     return {"kind": "multi", "items": items}
 
 
-def op_create(spec, output):
+def step_options(step):
+    options = dict(step.get("options") or {})
+    if "h5opts" in options and options["h5opts"] is not None:
+        options["h5opts"] = {
+            k: (tuple(v) if isinstance(v, list) else v) for k, v in options["h5opts"].items()
+        }
+    return options
+
+
+def pixels_of(entry):
+    if "pixels" in entry:
+        return read_table(entry["pixels"])
+    return (read_table(d) for d in entry["pixel_chunks"])
+
+
+def run_steps(spec):
+    """Creates the cool and scool files a case operates on. A step with a
+    "cells" list is a create_scool call, every other step a create_cooler
+    one."""
     import cooler
 
-    for step in spec["steps"]:
-        bins = read_table(step["bins"])
-        options = dict(step.get("options") or {})
-        if "h5opts" in options and options["h5opts"] is not None:
-            options["h5opts"] = {
-                k: (tuple(v) if isinstance(v, list) else v) for k, v in options["h5opts"].items()
-            }
-        if "pixels" in step:
-            pixels = read_table(step["pixels"])
-        else:
-            pixels = (read_table(d) for d in step["pixel_chunks"])
-        cooler.create_cooler(step["uri"], bins, pixels, **options)
+    for step in spec.get("steps", []):
+        options = step_options(step)
+        if "cells" not in step:
+            cooler.create_cooler(step["uri"], read_table(step["bins"]), pixels_of(step), **options)
+            continue
+        cells = {}
+        cell_bins = {}
+        for cell in step["cells"]:
+            cells[cell["name"]] = pixels_of(cell)
+            if "bins" in cell:
+                cell_bins[cell["name"]] = read_table(cell["bins"])
+        # A step level cell_bins list gives the bins dict its own keys, which
+        # need not be the keys of the pixel dict.
+        for entry in step.get("cell_bins", []):
+            cell_bins[entry["name"]] = read_table(entry["bins"])
+        bins = cell_bins if cell_bins else read_table(step["bins"])
+        cooler.create_scool(step["uri"], bins, cells, **options)
+
+
+def op_create(spec, output):
+    run_steps(spec)
     return {"kind": "created"}
+
+
+def fileops_call(call):
+    import cooler.fileops as fileops
+
+    args = list(call.get("args", []))
+    function = getattr(fileops, call["fn"])
+    result = function(*args)
+    if result is None:
+        return value_result(None)
+    if isinstance(result, bool):
+        return value_result(bool(result))
+    if isinstance(result, list):
+        return value_result([str(x) for x in result])
+    return value_result(result)
+
+
+def op_fileops(spec, output):
+    run_steps(spec)
+    items = [capture(lambda call=call: fileops_call(call)) for call in spec.get("calls", [])]
+    return {"kind": "list", "items": items}
 
 
 def op_range_query(spec, output):
@@ -395,6 +443,7 @@ OPS = {
     "parse_region": op_parse_region,
     "dump": op_dump,
     "create": op_create,
+    "fileops": op_fileops,
     "range_query": op_range_query,
     "is_cooler": op_is_cooler,
 }

@@ -215,7 +215,10 @@ def run_case(case, args, resolver, out_root):
     if py_doc["result"]["kind"] == "error":
         record["notes"].append(f"both raise {py_doc['result']['type']}")
 
-    if case["op"] == "create" and py_doc["result"]["kind"] == "created" and cmp.ok:
+    # Any case that declares output files has them compared structurally and
+    # read back by the other side: create cases, and the fileops cases that
+    # copy, move and link groups.
+    if case.get("outputs") and py_doc["result"]["kind"] != "error" and cmp.ok:
         outputs = case.get("outputs", [])
         for output in outputs:
             py_file = resolver.substitute(output, sides["py"]["files"], inputs_dir)
