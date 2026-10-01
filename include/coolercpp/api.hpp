@@ -293,9 +293,6 @@ class Cooler {
 [[nodiscard]] Table annotate(const Table& pixels, const RangeSelector1D& bins,
                              bool replace = false);
 
-// cooler.fileops.list_coolers (needed by Cooler's error message).
-[[nodiscard]] std::vector<std::string> list_coolers(const std::string& filepath);
-
 }  // namespace coolercpp
 
 #endif  // COOLERCPP_API_HPP

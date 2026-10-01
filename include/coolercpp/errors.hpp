@@ -35,6 +35,13 @@ COOLERCPP_DEFINE_ERROR(IndexError, Error)
 COOLERCPP_DEFINE_ERROR(TypeError, Error)
 COOLERCPP_DEFINE_ERROR(AttributeError, Error)
 COOLERCPP_DEFINE_ERROR(NotImplementedError, Error)
+// A failed assert statement in cooler, as in check_bins.
+COOLERCPP_DEFINE_ERROR(AssertionError, Error)
+// Python's ZeroDivisionError, which binnify raises for a bin size of zero.
+COOLERCPP_DEFINE_ERROR(ZeroDivisionError, Error)
+// h5py's fallback for an HDF5 failure it has no more specific class for, such
+// as a failed object copy.
+COOLERCPP_DEFINE_ERROR(RuntimeError, Error)
 // h5py raises OSError (or its subclass FileNotFoundError) for files that
 // cannot be opened; HDF5 library failures during reads and writes map here.
 COOLERCPP_DEFINE_ERROR(OSError, Error)

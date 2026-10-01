@@ -77,6 +77,26 @@ void create_cooler(const std::string& cool_uri, const Table& bins, const Table& 
 void create_cooler(const std::string& cool_uri, const Table& bins, PixelChunks pixels,
                    const CreateOptions& options = {});
 
+// The pixel input of one cell of a scool file: a table, or an iterable of
+// chunks for an input too large for one table.
+using CellPixels = std::variant<Table, PixelChunks>;
+// A Python dict of cell name -> table. The order given does not reach the
+// file: create_scool sorts the names.
+using CellTables = std::vector<std::pair<std::string, Table>>;
+using CellPixelTables = std::vector<std::pair<std::string, CellPixels>>;
+
+// cooler.create_scool with one bin table shared by every cell: the root of the
+// file holds the chromosome and bin tables and one cooler per cell under
+// /cells, each hard linking the shared tables.
+void create_scool(const std::string& cool_uri, const Table& bins,
+                  const CellPixelTables& cell_name_pixels, const CreateOptions& options = {});
+
+// cooler.create_scool with one bin table per cell (the dict form of the bins
+// argument): the shared root bin table is the chrom, start and end columns of
+// the first cell's bins, and every cell keeps its own extra bin columns.
+void create_scool(const std::string& cool_uri, const CellTables& cell_name_bins,
+                  const CellPixelTables& cell_name_pixels, const CreateOptions& options = {});
+
 }  // namespace coolercpp
 
 #endif  // COOLERCPP_CREATE_HPP

@@ -621,32 +621,141 @@ Value op_is_cooler(const Value& spec) {
     return out;
 }
 
-Value op_create(const Value& spec) {
-    for (const Value& step : member(spec, "steps").as_array()) {
-        const Table bins = read_table(member(step, "bins").as_string());
+// The pixel chunks of a case entry, as a PixelChunks generator.
+coolercpp::PixelChunks chunks_of(const Value& entry) {
+    std::vector<std::string> dirs;
+    for (const Value& item : member(entry, "pixel_chunks").as_array()) {
+        dirs.push_back(item.as_string());
+    }
+    auto position = std::make_shared<std::size_t>(0);
+    return [dirs, position]() -> std::optional<Table> {
+        if (*position >= dirs.size()) {
+            return std::nullopt;
+        }
+        return read_table(dirs[(*position)++]);
+    };
+}
+
+// Creates the cool and scool files a case operates on. A step with a "cells"
+// list is a create_scool call, every other step a create_cooler one.
+void run_steps(const Value& spec) {
+    const Value* steps = spec.find("steps");
+    if (steps == nullptr) {
+        return;
+    }
+    for (const Value& step : steps->as_array()) {
         const coolercpp::CreateOptions options =
             create_options(step.find("options") ? member(step, "options") : Value::object());
         const std::string uri = member(step, "uri").as_string();
-        if (const Value* pixels = step.find("pixels")) {
-            const Table table = read_table(pixels->as_string());
-            coolercpp::create_cooler(uri, bins, table, options);
-        } else {
-            std::vector<std::string> dirs;
-            for (const Value& item : member(step, "pixel_chunks").as_array()) {
-                dirs.push_back(item.as_string());
+        const Value* cells = step.find("cells");
+        if (cells == nullptr) {
+            const Table bins = read_table(member(step, "bins").as_string());
+            if (const Value* pixels = step.find("pixels")) {
+                coolercpp::create_cooler(uri, bins, read_table(pixels->as_string()), options);
+            } else {
+                coolercpp::create_cooler(uri, bins, chunks_of(step), options);
             }
-            auto position = std::make_shared<std::size_t>(0);
-            coolercpp::PixelChunks chunks = [dirs, position]() -> std::optional<Table> {
-                if (*position >= dirs.size()) {
-                    return std::nullopt;
-                }
-                return read_table(dirs[(*position)++]);
-            };
-            coolercpp::create_cooler(uri, bins, chunks, options);
+            continue;
+        }
+        coolercpp::CellPixelTables cell_pixels;
+        coolercpp::CellTables cell_bins;
+        for (const Value& cell : cells->as_array()) {
+            const std::string name = member(cell, "name").as_string();
+            if (const Value* pixels = cell.find("pixels")) {
+                cell_pixels.emplace_back(name, read_table(pixels->as_string()));
+            } else {
+                cell_pixels.emplace_back(name, chunks_of(cell));
+            }
+            if (const Value* bins = cell.find("bins")) {
+                cell_bins.emplace_back(name, read_table(bins->as_string()));
+            }
+        }
+        // A step level cell_bins list gives the bins dict its own keys, which
+        // need not be the keys of the pixel dict.
+        if (const Value* entries = step.find("cell_bins")) {
+            for (const Value& entry : entries->as_array()) {
+                cell_bins.emplace_back(member(entry, "name").as_string(),
+                                       read_table(member(entry, "bins").as_string()));
+            }
+        }
+        if (cell_bins.empty()) {
+            coolercpp::create_scool(uri, read_table(member(step, "bins").as_string()), cell_pixels,
+                                    options);
+        } else {
+            coolercpp::create_scool(uri, cell_bins, cell_pixels, options);
+        }
+    }
+}
+
+Value op_create(const Value& spec) {
+    run_steps(spec);
+    Value out = Value::object();
+    out["kind"] = "created";
+    return out;
+}
+
+// One cooler.fileops call of a "fileops" case.
+Value fileops_call(const Value& call) {
+    const std::string fn = member(call, "fn").as_string();
+    const Value args = call.find("args") ? member(call, "args") : Value::array({});
+    const auto& list = args.as_array();
+    const auto text = [&list](std::size_t k) { return list.at(k).as_string(); };
+    const auto flag_at = [&list](std::size_t k, bool fallback) {
+        return list.size() > k && !list[k].is_null() ? list[k].as_bool() : fallback;
+    };
+    if (fn == "is_cooler") {
+        return value_result(Value(coolercpp::is_cooler(text(0))));
+    }
+    if (fn == "is_multires_file") {
+        const int min_version =
+            list.size() > 1 && !list[1].is_null() ? static_cast<int>(list[1].as_int()) : 1;
+        return value_result(Value(coolercpp::is_multires_file(text(0), min_version)));
+    }
+    if (fn == "is_scool_file") {
+        return value_result(Value(coolercpp::is_scool_file(text(0))));
+    }
+    if (fn == "list_coolers") {
+        return value_result(string_array(coolercpp::list_coolers(text(0))));
+    }
+    if (fn == "list_scool_cells") {
+        return value_result(string_array(coolercpp::list_scool_cells(text(0))));
+    }
+    if (fn == "ls") {
+        return value_result(string_array(coolercpp::ls(text(0))));
+    }
+    if (fn == "cp") {
+        coolercpp::cp(text(0), text(1), flag_at(2, false));
+        return value_result(Value());
+    }
+    if (fn == "mv") {
+        coolercpp::mv(text(0), text(1), flag_at(2, false));
+        return value_result(Value());
+    }
+    if (fn == "ln") {
+        coolercpp::ln(text(0), text(1), flag_at(2, false), flag_at(3, false));
+        return value_result(Value());
+    }
+    if (fn == "pprint_data_tree") {
+        std::optional<int> level;
+        if (list.size() > 1 && !list[1].is_null()) {
+            level = static_cast<int>(list[1].as_int());
+        }
+        return value_result(Value(coolercpp::pprint_data_tree(text(0), level)));
+    }
+    throw std::runtime_error("unknown fileops function " + fn);
+}
+
+Value op_fileops(const Value& spec) {
+    run_steps(spec);
+    Value items = Value::array({});
+    if (const Value* calls = spec.find("calls")) {
+        for (const Value& call : calls->as_array()) {
+            items.push_back(capture([&] { return fileops_call(call); }));
         }
     }
     Value out = Value::object();
-    out["kind"] = "created";
+    out["kind"] = "list";
+    out["items"] = items;
     return out;
 }
 
@@ -679,6 +788,7 @@ int main(int argc, char** argv) {
             }
             if (op == "dump") return op_dump(*spec, output);
             if (op == "create") return op_create(*spec);
+            if (op == "fileops") return op_fileops(*spec);
             if (op == "range_query") return op_range_query(*spec, output);
             if (op == "is_cooler") return op_is_cooler(*spec);
             if (op == "dataset_read") return op_dataset_read(*spec, output);

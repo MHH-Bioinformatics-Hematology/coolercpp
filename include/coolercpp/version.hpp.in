@@ -8,6 +8,7 @@ inline constexpr const char* kVersion = "@PROJECT_VERSION@";
 inline constexpr const char* kCoolerVersion = "0.10.2";
 // cooler.create's format constants.
 inline constexpr int kFormatVersion = 3;
+inline constexpr int kFormatVersionScool = 1;
 inline constexpr const char* kMagic = "HDF5::Cooler";
 inline constexpr const char* kMagicScool = "HDF5::SCOOL";
 inline constexpr const char* kMagicMcool = "HDF5::MCOOL";

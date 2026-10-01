@@ -19,7 +19,8 @@ add_executable(coolercpp_tests
     test_region.cpp
     test_cooler.cpp
     test_create.cpp
-    test_fastio.cpp)
+    test_fastio.cpp
+    test_scool.cpp)
 target_link_libraries(coolercpp_tests PRIVATE coolercpp::coolercpp coolercpp_doctest)
 # Tests read the tracked data files and write into the build tree's scratch
 # directory; both paths are passed in, never derived from the working directory.

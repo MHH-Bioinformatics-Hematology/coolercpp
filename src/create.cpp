@@ -860,6 +860,10 @@ struct CreateCall {
     bool ensure_sorted = false;
     std::optional<std::string> creation_date;
     std::string generated_by;
+    // cooler.create's append_scool/scool_root_uri pair, reduced to the group
+    // path of the scool root in the same file: the cell shares the chromosome
+    // table and the three main bin columns with the root through hard links.
+    std::optional<std::string> scool_root;
 };
 
 CreateCall make_call(const std::string& uri, const CreateOptions& o) {
@@ -890,6 +894,126 @@ struct Source {
 
 bool contains(const std::vector<std::string>& v, const std::string& s) {
     return std::find(v.begin(), v.end(), s) != v.end();
+}
+
+// cooler.create._create.write_info: the shared tail of every info block. A
+// scool root carries the scool magic and format version and no nnz.
+void write_info(h5::File& file, const std::string& group_path, json::Value info, bool scool,
+                const std::optional<std::string>& creation_date,
+                const std::string& generated_by) {
+    if (info.find("genome-assembly") == nullptr) {
+        info["genome-assembly"] = "unknown";
+    }
+    const json::Value* metadata = info.find("metadata");
+    info["metadata"] = json::dumps(metadata != nullptr ? *metadata : json::Value::object());
+    info["creation-date"] = creation_date.has_value() ? *creation_date : npy::iso_now();
+    info["generated-by"] = generated_by;
+    info["format"] = scool ? kMagicScool : kMagic;
+    info["format-version"] =
+        json::Value::integer(scool ? kFormatVersionScool : kFormatVersion);
+    info["format-url"] = kFormatUrl;
+    for (const auto& [key, value] : info.as_object()) {
+        file.set_attribute(group_path, key, value);
+    }
+}
+
+// cooler.create._create.write_chroms and write_bins: the chromosome table and
+// the bin table of a cooler or of a scool root. chrom_ids receives the
+// chromosome ID of every bin, which the chrom_offset index is built from.
+void write_chroms_and_bins(h5::File& file, const std::string& chroms_group,
+                           const std::string& bins_group, const Table& bins,
+                           const ChromSizes& chromsizes, const Kwargs& h5opts,
+                           std::vector<std::int32_t>& chrom_ids) {
+    const std::size_t n_chroms = chromsizes.size();
+    const std::size_t n_bins = bins.num_rows();
+    chrom_ids.assign(n_bins, 0);
+    // ---- chroms ----
+    file.create_group(chroms_group);
+    {
+        const std::vector<std::string>& names = chromsizes.names();
+        std::size_t width = 1;
+        for (const std::string& name : names) {
+            width = std::max(width, name.size());
+        }
+        const h5::Handle type = h5::fixed_string_type(width);
+        h5::Dataset dataset = create_dataset(file, join_path(chroms_group, "name"),
+                                             TypeSpec{type.get(), width, 'S'}, n_chroms,
+                                             std::nullopt, std::nullopt, h5opts);
+        dataset.write_column(0, Column(names));
+        const h5::Handle length_type = h5::file_type(DType::Int32);
+        h5::Dataset lengths = create_dataset(file, join_path(chroms_group, "length"),
+                                             numeric_spec(length_type, DType::Int32), n_chroms,
+                                             std::nullopt, std::nullopt, h5opts);
+        lengths.write_column(0, Column(chromsizes.lengths()).astype(DType::Int32));
+    }
+
+    // ---- bins ----
+    file.create_group(bins_group);
+    {
+        std::unordered_map<std::string, std::int32_t> idmap;
+        for (std::size_t i = 0; i < n_chroms; ++i) {
+            idmap[chromsizes.names()[i]] = static_cast<std::int32_t>(i);
+        }
+        const Column& chrom = bins["chrom"];
+        if (chrom.dtype() == DType::Categorical) {
+            const CategoricalData& data = chrom.categorical();
+            std::vector<std::int32_t> by_code(data.categories->size(), -1);
+            for (std::size_t c = 0; c < by_code.size(); ++c) {
+                const auto found = idmap.find((*data.categories)[c]);
+                if (found != idmap.end()) {
+                    by_code[c] = found->second;
+                }
+            }
+            for (std::size_t i = 0; i < n_bins; ++i) {
+                const std::int32_t code = data.codes[i];
+                if (code < 0) {
+                    throw KeyError("nan");
+                }
+                chrom_ids[i] = by_code[static_cast<std::size_t>(code)];
+            }
+        } else {
+            for (std::size_t i = 0; i < n_bins; ++i) {
+                const std::string label = chrom.dtype() == DType::String
+                                              ? chrom.values<std::string>()[i]
+                                              : std::to_string(chrom.as_int64(i));
+                chrom_ids[i] = idmap.at(label);
+            }
+        }
+        const std::string chrom_path = join_path(bins_group, "chrom");
+        bool as_enum = true;
+        try {
+            const h5::Handle type = h5::enum_type(chromsizes.names(), DType::Int32);
+            h5::Dataset dataset = create_dataset(file, chrom_path, TypeSpec{type.get(), 4, 'e'},
+                                                 n_bins, std::nullopt, std::nullopt, h5opts);
+            const h5::Handle native(H5Tget_native_type(type.get(), H5T_DIR_ASCEND),
+                                    h5::Handle::Kind::DataType);
+            dataset.write_raw(0, n_bins, native.get(), chrom_ids.data());
+        } catch (const ValueError&) {
+            // Too many scaffolds for an HDF5 enum header: plain int32 IDs.
+            as_enum = false;
+            const h5::Handle type = h5::file_type(DType::Int32);
+            h5::Dataset dataset = create_dataset(file, chrom_path, numeric_spec(type, DType::Int32),
+                                                 n_bins, std::nullopt, std::nullopt, h5opts);
+            dataset.write_raw(0, n_bins, H5T_NATIVE_INT32, chrom_ids.data());
+        }
+        if (!as_enum) {
+            file.set_attribute(chrom_path, "enum_path", json::Value("/chroms/name"));
+        }
+        const h5::Handle coord_type = h5::file_type(DType::Int32);
+        for (const char* name : {"start", "end"}) {
+            h5::Dataset dataset = create_dataset(file, join_path(bins_group, name),
+                                                 numeric_spec(coord_type, DType::Int32), n_bins,
+                                                 std::nullopt, std::nullopt, h5opts);
+            dataset.write_column(0, bins[name].astype(DType::Int32));
+        }
+        for (std::size_t c = 0; c < bins.num_columns(); ++c) {
+            const std::string& name = bins.columns()[c];
+            if (name == "chrom" || name == "start" || name == "end") {
+                continue;
+            }
+            put_column(file, bins_group, name, bins.column(c));
+        }
+    }
 }
 
 void create_impl(const CreateCall& call, const Table& bins, Source source) {
@@ -973,87 +1097,19 @@ void create_impl(const CreateCall& call, const Table& bins, Source source) {
         file.create_group(group_path);
     }
 
-    // ---- chroms ----
     const std::string chroms_group = join_path(group_path, "chroms");
-    file.create_group(chroms_group);
-    {
-        const std::vector<std::string>& names = chromsizes.names();
-        std::size_t width = 1;
-        for (const std::string& name : names) {
-            width = std::max(width, name.size());
-        }
-        const h5::Handle type = h5::fixed_string_type(width);
-        h5::Dataset dataset = create_dataset(file, join_path(chroms_group, "name"),
-                                             TypeSpec{type.get(), width, 'S'}, n_chroms,
-                                             std::nullopt, std::nullopt, h5opts);
-        dataset.write_column(0, Column(names));
-        const h5::Handle length_type = h5::file_type(DType::Int32);
-        h5::Dataset lengths = create_dataset(file, join_path(chroms_group, "length"),
-                                             numeric_spec(length_type, DType::Int32), n_chroms,
-                                             std::nullopt, std::nullopt, h5opts);
-        lengths.write_column(0, Column(chromsizes.lengths()).astype(DType::Int32));
-    }
-
-    // ---- bins ----
     const std::string bins_group = join_path(group_path, "bins");
-    file.create_group(bins_group);
     std::vector<std::int32_t> chrom_ids(n_bins);
-    {
-        std::unordered_map<std::string, std::int32_t> idmap;
-        for (std::size_t i = 0; i < n_chroms; ++i) {
-            idmap[chromsizes.names()[i]] = static_cast<std::int32_t>(i);
-        }
-        const Column& chrom = bins["chrom"];
-        if (chrom.dtype() == DType::Categorical) {
-            const CategoricalData& data = chrom.categorical();
-            std::vector<std::int32_t> by_code(data.categories->size(), -1);
-            for (std::size_t c = 0; c < by_code.size(); ++c) {
-                const auto found = idmap.find((*data.categories)[c]);
-                if (found != idmap.end()) {
-                    by_code[c] = found->second;
-                }
-            }
-            for (std::size_t i = 0; i < n_bins; ++i) {
-                const std::int32_t code = data.codes[i];
-                if (code < 0) {
-                    throw KeyError("nan");
-                }
-                chrom_ids[i] = by_code[static_cast<std::size_t>(code)];
-            }
-        } else {
-            for (std::size_t i = 0; i < n_bins; ++i) {
-                const std::string label = chrom.dtype() == DType::String
-                                              ? chrom.values<std::string>()[i]
-                                              : std::to_string(chrom.as_int64(i));
-                chrom_ids[i] = idmap.at(label);
-            }
-        }
-        const std::string chrom_path = join_path(bins_group, "chrom");
-        bool as_enum = true;
-        try {
-            const h5::Handle type = h5::enum_type(chromsizes.names(), DType::Int32);
-            h5::Dataset dataset = create_dataset(file, chrom_path, TypeSpec{type.get(), 4, 'e'},
-                                                 n_bins, std::nullopt, std::nullopt, h5opts);
-            const h5::Handle native(H5Tget_native_type(type.get(), H5T_DIR_ASCEND),
-                                    h5::Handle::Kind::DataType);
-            dataset.write_raw(0, n_bins, native.get(), chrom_ids.data());
-        } catch (const ValueError&) {
-            // Too many scaffolds for an HDF5 enum header: plain int32 IDs.
-            as_enum = false;
-            const h5::Handle type = h5::file_type(DType::Int32);
-            h5::Dataset dataset = create_dataset(file, chrom_path, numeric_spec(type, DType::Int32),
-                                                 n_bins, std::nullopt, std::nullopt, h5opts);
-            dataset.write_raw(0, n_bins, H5T_NATIVE_INT32, chrom_ids.data());
-        }
-        if (!as_enum) {
-            file.set_attribute(chrom_path, "enum_path", json::Value("/chroms/name"));
-        }
-        const h5::Handle coord_type = h5::file_type(DType::Int32);
-        for (const char* name : {"start", "end"}) {
-            h5::Dataset dataset = create_dataset(file, join_path(bins_group, name),
-                                                 numeric_spec(coord_type, DType::Int32), n_bins,
-                                                 std::nullopt, std::nullopt, h5opts);
-            dataset.write_column(0, bins[name].astype(DType::Int32));
+
+    if (call.scool_root.has_value()) {
+        // ---- a scool cell: chroms and the three main bin columns are hard
+        // links into the scool root, the remaining bin columns are the cell's
+        // own and go through put, whose default options are gzip level 6
+        // without shuffle whatever h5opts the caller passed ----
+        const std::string root_bins = join_path(*call.scool_root, "bins");
+        file.hard_link(chroms_group, join_path(*call.scool_root, "chroms"));
+        for (const char* name : {"chrom", "start", "end"}) {
+            file.hard_link(join_path(bins_group, name), join_path(root_bins, name));
         }
         for (std::size_t c = 0; c < bins.num_columns(); ++c) {
             const std::string& name = bins.columns()[c];
@@ -1062,6 +1118,14 @@ void create_impl(const CreateCall& call, const Table& bins, Source source) {
             }
             put_column(file, bins_group, name, bins.column(c));
         }
+        // index_bins reads the linked chrom column, not the bin table handed
+        // to create(), so a cell whose bins differ from the root indexes the
+        // root's.
+        const h5::Dataset linked = file.open_dataset(join_path(bins_group, "chrom"));
+        chrom_ids = linked.read_column(0, linked.length()).as<std::int32_t>();
+    } else {
+        write_chroms_and_bins(file, chroms_group, bins_group, bins, chromsizes,
+                              h5opts, chrom_ids);
     }
 
     // ---- pixels ----
@@ -1211,20 +1275,7 @@ void create_impl(const CreateCall& call, const Table& bins, Source source) {
     if (call.metadata.has_value()) {
         info["metadata"] = *call.metadata;
     }
-    // write_info
-    if (info.find("genome-assembly") == nullptr) {
-        info["genome-assembly"] = "unknown";
-    }
-    const json::Value* metadata = info.find("metadata");
-    info["metadata"] = json::dumps(metadata != nullptr ? *metadata : json::Value::object());
-    info["creation-date"] = call.creation_date.has_value() ? *call.creation_date : npy::iso_now();
-    info["generated-by"] = call.generated_by;
-    info["format"] = kMagic;
-    info["format-version"] = json::Value::integer(kFormatVersion);
-    info["format-url"] = kFormatUrl;
-    for (const auto& [key, value] : info.as_object()) {
-        file.set_attribute(group_path, key, value);
-    }
+    write_info(file, group_path, std::move(info), false, call.creation_date, call.generated_by);
 }
 
 // ---------------------------------------------------------------------------
@@ -1626,6 +1677,157 @@ void create_cooler(const std::string& cool_uri, const Table& bins, PixelChunks p
         return;
     }
     create_from_unordered(cool_uri, bins, std::move(pixels), options);
+}
+
+namespace {
+
+// cooler.create_scool. shared_bins is the single bin table form, cell_bins the
+// dict form; exactly one of the two is given.
+void create_scool_impl(const std::string& cool_uri, const Table* shared_bins,
+                       const CellTables* cell_bins, const CellPixelTables& cells,
+                       const CreateOptions& options) {
+    const auto [file_path, group_path] = parse_cooler_uri(cool_uri);
+    const Kwargs h5opts = set_h5opts(options.h5opts);
+
+    // sorted(cell_name_pixels_dict): plain lexicographic order, which is not
+    // the natural order cooler.fileops lists the cells of the finished file in.
+    std::vector<std::string> cell_names;
+    cell_names.reserve(cells.size());
+    for (const auto& entry : cells) {
+        cell_names.push_back(entry.first);
+    }
+    std::sort(cell_names.begin(), cell_names.end());
+
+    Table root_bins;
+    if (shared_bins != nullptr) {
+        root_bins = *shared_bins;
+    } else {
+        if (cell_bins->empty()) {
+            throw ValueError("At least one bin must be given.");
+        }
+        // The bin table of the first cell inserted, not of the first in sort
+        // order, becomes the shared one, reduced to its three main columns.
+        root_bins = cell_bins->front().second.select({"chrom", "start", "end"});
+        std::vector<std::string> bins_keys;
+        bins_keys.reserve(cell_bins->size());
+        for (const auto& entry : *cell_bins) {
+            bins_keys.push_back(entry.first);
+        }
+        std::sort(bins_keys.begin(), bins_keys.end());
+        // zip stops at the shorter sequence, so a bins dict that has more or
+        // fewer keys than the pixel dict passes as long as the shared prefix
+        // agrees.
+        const std::size_t common = std::min(bins_keys.size(), cell_names.size());
+        for (std::size_t k = 0; k < common; ++k) {
+            if (bins_keys[k] != cell_names[k]) {
+                throw ValueError("Bins and pixel dicts do not have matching keys");
+            }
+        }
+    }
+    for (const char* col : {"chrom", "start", "end"}) {
+        if (!root_bins.contains(col)) {
+            throw ValueError(std::string("Missing column from bin table: '") + col + "'.");
+        }
+    }
+
+    const ChromSizes chromsizes = get_chromsizes(root_bins);
+    if (chromsizes.size() == 0) {
+        throw ValueError("not enough values to unpack (expected 2, got 0)");
+    }
+    const json::Value binsize = get_binsize(root_bins);
+    const std::size_t n_bins = root_bins.num_rows();
+
+    // The shared chromosome and bin tables and the root info. The file is
+    // closed again before the cells are appended, as cooler reopens it for
+    // every step.
+    {
+        h5::File file(file_path, h5::parse_mode(options.mode));
+        if (group_path == "/") {
+            // Only chroms and bins are replaced: an existing cells group
+            // survives a second run in append mode.
+            for (const char* name : {"chroms", "bins"}) {
+                if (file.exists(std::string("/") + name)) {
+                    file.remove(std::string("/") + name);
+                }
+            }
+        } else {
+            if (file.exists(group_path)) {
+                file.remove(group_path);
+            }
+            file.create_group(group_path);
+        }
+        std::vector<std::int32_t> chrom_ids;
+        write_chroms_and_bins(file, join_path(group_path, "chroms"),
+                              join_path(group_path, "bins"), root_bins, chromsizes, h5opts,
+                              chrom_ids);
+
+        json::Value info = json::Value::object();
+        info["bin-type"] = binsize.is_null() ? "variable" : "fixed";
+        info["bin-size"] = binsize.is_null() ? json::Value("null") : binsize;
+        info["nchroms"] = json::Value::integer(static_cast<std::int64_t>(chromsizes.size()));
+        info["ncells"] = json::Value::integer(static_cast<std::int64_t>(cells.size()));
+        info["nbins"] = json::Value::integer(static_cast<std::int64_t>(n_bins));
+        if (options.assembly.has_value()) {
+            info["genome-assembly"] = *options.assembly;
+        }
+        if (options.metadata.has_value()) {
+            info["metadata"] = *options.metadata;
+        }
+        write_info(file, group_path, std::move(info), true, options.creation_date,
+                   options.generated_by);
+    }
+
+    // Append the cells. create() is called directly, so the ordered,
+    // mergebuf, delete_temp, temp_dir and max_merge arguments never reach it:
+    // every cell's pixels are written in one pass in the order given, and a
+    // table is not sorted first the way create_cooler sorts one.
+    for (const std::string& key : cell_names) {
+        const std::size_t slash = key.find_last_of('/');
+        const std::string cell_name = slash == std::string::npos ? key : key.substr(slash + 1);
+        CreateCall call = make_call(cool_uri + "::/cells/" + cell_name, options);
+        call.mode = "a";
+        call.scool_root = group_path;
+
+        const Table* bins = shared_bins;
+        if (bins == nullptr) {
+            for (const auto& entry : *cell_bins) {
+                if (entry.first == key) {
+                    bins = &entry.second;
+                    break;
+                }
+            }
+            if (bins == nullptr) {
+                throw KeyError(key);
+            }
+        }
+        const CellPixels* pixels = nullptr;
+        for (const auto& entry : cells) {
+            if (entry.first == key) {
+                pixels = &entry.second;
+                break;
+            }
+        }
+        Source source;
+        if (const auto* table = std::get_if<Table>(pixels)) {
+            source.single = table;
+            source.input_columns = table->columns();
+        } else {
+            source.chunks = std::get<PixelChunks>(*pixels);
+        }
+        create_impl(call, *bins, source);
+    }
+}
+
+}  // namespace
+
+void create_scool(const std::string& cool_uri, const Table& bins,
+                  const CellPixelTables& cell_name_pixels, const CreateOptions& options) {
+    create_scool_impl(cool_uri, &bins, nullptr, cell_name_pixels, options);
+}
+
+void create_scool(const std::string& cool_uri, const CellTables& cell_name_bins,
+                  const CellPixelTables& cell_name_pixels, const CreateOptions& options) {
+    create_scool_impl(cool_uri, nullptr, &cell_name_bins, cell_name_pixels, options);
 }
 
 }  // namespace coolercpp

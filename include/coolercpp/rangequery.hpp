@@ -86,11 +86,6 @@ class DatasetReader {
     std::shared_ptr<const Impl> impl_;
 };
 
-// cooler.fileops.is_cooler: whether a URI names a cooler group (its "format"
-// attribute is "HDF5::Cooler"). False when the file is missing or not HDF5;
-// KeyError when the file is HDF5 but the group does not exist.
-[[nodiscard]] bool is_cooler(const std::string& uri);
-
 }  // namespace coolercpp
 
 #endif  // COOLERCPP_RANGEQUERY_HPP
