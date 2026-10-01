@@ -30,7 +30,6 @@ int main() {
 }
 ```
 
-The programs under [`examples/`](https://github.com/MHH-Bioinformatics-Hematology/coolercpp/tree/main/examples)
-are complete and build with the library: `read_cool` reads a file,
-`create_cool` writes one, and `scool_fileops` writes a single-cell file and
-operates on its groups. The pages that follow show them in full.
+[The examples page](examples.md) carries three complete programs that build with
+the library: `read_cool` reads a file, `create_cool` writes one, and
+`scool_fileops` writes a single-cell file and operates on its groups.

@@ -43,6 +43,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: install.md
+  - Examples: examples.md
   - Reading cool files: reading.md
   - Writing cool files: writing.md
   - File operations: files.md
