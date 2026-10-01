@@ -959,6 +959,20 @@ void File::set_attribute(const std::string& path, const std::string& name,
             const auto& items = value.as_array();
             const hsize_t n = items.size();
             const Handle space(H5Screate_simple(1, &n, nullptr), Handle::Kind::DataSpace);
+            if (!items.empty() && items[0].is_bool()) {
+                // numpy bool arrays become h5py's int8 FALSE/TRUE enum.
+                const Handle type = file_type(DType::Bool);
+                const Handle attr = create(type.get(), space.get());
+                std::vector<std::int8_t> v;
+                v.reserve(items.size());
+                for (const auto& item : items) {
+                    v.push_back(item.as_bool() ? 1 : 0);
+                }
+                if (H5Awrite(attr.get(), type.get(), v.data()) < 0) {
+                    throw OSError("cannot write attribute " + name);
+                }
+                return;
+            }
             if (!items.empty() && items[0].is_number()) {
                 DType dtype = items[0].dtype();
                 const bool floating = items[0].type() == json::Type::Double;

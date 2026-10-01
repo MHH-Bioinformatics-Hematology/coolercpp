@@ -29,7 +29,8 @@ Ports of cooler 0.10.2 (https://github.com/open2c/cooler, BSD-3-Clause):
 | `src/rangequery.hpp`, `src/rangequery.cpp` | `cooler/core/_rangequery.py` |
 | `include/coolercpp/create.hpp`, `src/create.cpp` | `cooler/create/_create.py`, `cooler/create/_ingest.py` (`validate_pixels`), `cooler/core/_tableops.py` (`put`), `cooler/reduce.py` (`merge_breakpoints`, `CoolerMerger`), `cooler/util.py` (`rlencode`) |
 | `include/coolercpp/region.hpp`, `src/region.cpp` | `cooler/util.py` (`parse_cooler_uri`, `parse_humanized`, `parse_region_string`, `parse_region`) |
-| `include/coolercpp/util.hpp`, `src/util.cpp` | `cooler/util.py` (`get_binsize`, `get_chromsizes`, `natsort_key`, `natsorted`) |
+| `include/coolercpp/util.hpp`, `src/util.cpp` | `cooler/util.py` (`get_binsize`, `get_chromsizes`, `natsort_key`, `natsorted`, `partition`, `mad`) |
+| `include/coolercpp/balance.hpp`, `src/balance.cpp` | `cooler/balance.py`, `cooler/parallel.py` (`chunkgetter`, `split`, `MultiplexDataPipe`) |
 | `tests/data/*.cool`, `tests/data/*.mcool`, `tests/data/toy.chrom.sizes` | `tests/data/` of cooler 0.10.2 |
 
 Behaviour reproduced from other BSD-3-Clause projects, implemented from their
@@ -37,8 +38,8 @@ documented or observed semantics:
 
 - h5py 3.12 (`h5py/_hl/filters.py` `guess_chunk` and `fill_dcpl`,
   `h5py/_hl/dataset.py` `make_new_dset`): `src/h5.cpp`, `src/create.cpp`.
-- numpy 1.26 (pairwise summation, `linspace`, dtype promotion, slice
-  resolution): `src/numpy_compat.cpp`, `src/dtype.cpp`.
+- numpy 1.26 (pairwise summation, `mean`, `var`, `median`, `linspace`, dtype
+  promotion, slice resolution): `src/numpy_compat.cpp`, `src/dtype.cpp`.
 - pandas 2.2 (`group_sum` Kahan summation, `Categorical.from_codes` checks,
   label slicing in `annotate`): `src/create.cpp`, `src/api.cpp`.
 - scipy 1.14 (`coo_matrix` index dtype selection and bounds checks):

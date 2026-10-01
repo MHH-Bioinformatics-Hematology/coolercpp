@@ -94,11 +94,48 @@ pixel `Table` (`is_pixels()`, `pixels()`), matching the numpy array,
 | `cooler.util.get_binsize(bins)` | `get_binsize(const Table&)` returning a `json::Value` number with the dtype of `end - start`, or null |
 | `cooler.util.get_chromsizes(bins)` | `get_chromsizes(const Table&)` |
 | `cooler.util.natsorted(items)` | `natsorted(items)` |
+| `cooler.util.partition(start, stop, step)` | `partition(start, stop, step)` returning a vector of `(lo, hi)` pairs |
+| `cooler.util.mad(data)` | `mad(std::span<const double>)` (the `axis=None` case) |
+| `cooler.balance_cooler(clr, **kwargs)`, `cooler.iterative_correction` | `balance_cooler(const Cooler&, const BalanceOptions&)` returning a `BalanceResult` |
 
 `CreateOptions` extensions that cooler does not have: `creation_date` (a fixed
 value for reproducible files) and `generated_by` (defaults to
 `"coolercpp-<version>"`; the harness does not compare this attribute's value). `h5opts` is an ordered list of `(key, H5OptValue)` pairs;
 a tuple such as `(None,)` is a vector in which `-1` stands for `None`.
+
+## Balancing
+
+`BalanceOptions` carries every keyword of `balance_cooler` with the Python
+name and the Python default: `cis_only`, `trans_only`, `ignore_diags`,
+`mad_max`, `min_nnz`, `min_count`, `blacklist`, `rescale_marginals`, `x0`,
+`tol`, `max_iters`, `chunksize`, `use_lock`, `store` and `store_name`.
+
+```cpp
+auto [bias, stats] = coolercpp::balance_cooler(clr, {.cis_only = true, .store = true});
+```
+
+`chunksize` is a `std::optional`, so `std::nullopt` is Python's
+`chunksize=None`. `blacklist` and `x0` are `std::optional<std::vector<...>>`,
+`None` being `std::nullopt`. `ignore_diags` is an `IgnoreDiags`, which keeps
+Python's `False` apart from `0`: both switch the diagonal filter off, but
+cooler copies the argument into the stats dictionary and from there into the
+stored column's attributes, where `False` is a bool and `0` an int.
+
+`BalanceResult::stats` is a `json::Value` object with cooler's keys in cooler's
+order. `scale`, `converged` and `var` are numbers for a genome-wide or
+trans-only run and arrays with one entry per chromosome for `cis_only`, as in
+Python.
+
+cooler's `map` argument dispatches pixel chunks to a process pool;
+`BalanceOptions::threads` instead decodes the HDF5 chunks of one pixel span on
+a thread pool. The marginals are still folded span by span in file order, so
+the weights are bit for bit the same whatever the thread count is, and the
+default is one thread because cooler's default `map` is sequential.
+`use_lock`, which guards an HDF5 file shared with forked workers, is accepted
+and changes nothing. The experimental `cooler.parallel` pipeline
+(`split(...).prepare(...).pipe(...).reduce(...)`, re-exported as
+`cooler.tools`) has no public counterpart; coolercpp runs the same pipeline
+inside `balance_cooler`.
 
 ## The table type
 
