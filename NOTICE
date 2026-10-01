@@ -1,0 +1,15 @@
+coolercpp reproduces the API and the file format of the Python cooler library
+and carries code ported from it. docs/PROVENANCE.md names, file by file, what
+derives from which project. The notices those projects require are reproduced
+there and below.
+
+cooler (https://github.com/open2c/cooler), BSD-3-Clause,
+Copyright (c) 2015-2023, Cooler developers. The full licence text is in
+docs/PROVENANCE.md. Files ported from cooler are listed in the same document.
+
+The test files under tests/data that come from cooler 0.10.2 carry that
+licence as well.
+
+Behaviour reproduced from h5py (BSD-3-Clause), numpy (BSD-3-Clause),
+pandas (BSD-3-Clause) and scipy (BSD-3-Clause) is implemented from their
+documented or observed semantics; no code of theirs is included.

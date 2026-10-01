@@ -2,11 +2,9 @@
 
 ## Licence
 
-The repository has no licence file yet. The owner decides between GPL-3.0
-(HiCExplorer's licence) and BSD-3-Clause (cooler's). Everything listed below
-is available under terms compatible with either choice; files ported from
-BSD-3-Clause projects must keep the notices reproduced at the end of this
-document whichever licence is chosen.
+coolercpp is BSD-3-Clause (`LICENSE`), the licence of cooler, whose API, file
+format and ported code it follows. The notices the projects below require are
+reproduced at the end of this document and summarised in `NOTICE`.
 
 ## Code taken from HiCExplorer v4
 
