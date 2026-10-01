@@ -7,7 +7,6 @@
 #define COOLERCPP_COOLERCPP_HPP
 
 #include "coolercpp/api.hpp"
-#include "coolercpp/balance.hpp"
 #include "coolercpp/create.hpp"
 #include "coolercpp/dtype.hpp"
 #include "coolercpp/errors.hpp"

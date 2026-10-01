@@ -15,7 +15,6 @@
 #include <cstdio>
 #include <fstream>
 #include <functional>
-#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -611,101 +610,6 @@ Value op_dataset_read(const Value& spec, Output& output) {
     return out;
 }
 
-// The initial weight vector of a balance case, built from integers so that both
-// sides produce the same float64 values (oracle.py make_x0).
-std::vector<double> make_x0(const Value& spec, std::int64_t n_bins) {
-    std::vector<double> values(static_cast<std::size_t>(n_bins));
-    for (std::int64_t i = 0; i < n_bins; ++i) {
-        values[static_cast<std::size_t>(i)] =
-            static_cast<double>((i * 7919) % 1000 + 1) / 1000.0;
-    }
-    const Value* every = spec.find("nan_every");
-    const std::int64_t step = (every == nullptr || every->is_null()) ? 0 : every->as_int();
-    if (step > 0) {
-        for (std::int64_t i = 0; i < n_bins; i += step) {
-            values[static_cast<std::size_t>(i)] = std::numeric_limits<double>::quiet_NaN();
-        }
-    }
-    return values;
-}
-
-coolercpp::BalanceOptions balance_options(const Value& o, std::int64_t n_bins) {
-    coolercpp::BalanceOptions options;
-    options.cis_only = flag(o, "cis_only", false);
-    options.trans_only = flag(o, "trans_only", false);
-    if (const Value* v = o.find("ignore_diags"); v != nullptr && !v->is_null()) {
-        options.ignore_diags = v->is_bool() ? coolercpp::IgnoreDiags(v->as_bool())
-                                           : coolercpp::IgnoreDiags(v->as_int());
-    }
-    if (const Value* v = o.find("mad_max"); v != nullptr && !v->is_null()) {
-        options.mad_max = v->as_int();
-    }
-    if (const Value* v = o.find("min_nnz"); v != nullptr && !v->is_null()) {
-        options.min_nnz = v->as_int();
-    }
-    if (const Value* v = o.find("min_count"); v != nullptr && !v->is_null()) {
-        options.min_count = v->as_int();
-    }
-    if (const Value* v = o.find("blacklist"); v != nullptr && !v->is_null()) {
-        std::vector<std::int64_t> bad;
-        for (const Value& item : v->as_array()) {
-            bad.push_back(item.as_int());
-        }
-        options.blacklist = std::move(bad);
-    }
-    options.rescale_marginals = flag(o, "rescale_marginals", true);
-    if (const Value* v = o.find("x0"); v != nullptr && !v->is_null()) {
-        options.x0 = make_x0(*v, n_bins);
-    }
-    if (const Value* v = o.find("tol"); v != nullptr && !v->is_null()) {
-        options.tol = v->as_double();
-    }
-    if (const Value* v = o.find("max_iters"); v != nullptr && !v->is_null()) {
-        options.max_iters = v->as_int();
-    }
-    if (const Value* v = o.find("chunksize")) {
-        options.chunksize = v->is_null() ? std::nullopt : std::optional(v->as_int());
-    }
-    if (const Value* v = o.find("threads"); v != nullptr && !v->is_null()) {
-        options.threads = static_cast<int>(v->as_int());
-    }
-    options.use_lock = flag(o, "use_lock", false);
-    options.store = flag(o, "store", false);
-    if (const Value* v = o.find("store_name"); v != nullptr && !v->is_null()) {
-        options.store_name = v->as_string();
-    }
-    return options;
-}
-
-void copy_file(const std::string& from, const std::string& to) {
-    std::ifstream in(from, std::ios::binary);
-    std::ofstream out(to, std::ios::binary);
-    out << in.rdbuf();
-    if (!in || !out) {
-        throw std::runtime_error("cannot copy " + from + " to " + to);
-    }
-}
-
-Value op_balance(const Value& spec, Output& output) {
-    const std::string uri = member(spec, "uri").as_string();
-    if (const Value* source = spec.find("copy_from"); source != nullptr && !source->is_null()) {
-        copy_file(source->as_string(), uri.substr(0, uri.find("::")));
-    }
-    const Cooler c(uri);
-    const Value o = spec.find("options") ? member(spec, "options") : Value::object();
-    const coolercpp::BalanceResult result =
-        coolercpp::balance_cooler(c, balance_options(o, c.shape()[0]));
-    Table bias;
-    bias.set("bias", Column(result.bias));
-    Value items = Value::object();
-    items["bias"] = output.table(bias);
-    items["stats"] = value_result(tagged(result.stats));
-    Value out = Value::object();
-    out["kind"] = "multi";
-    out["items"] = items;
-    return out;
-}
-
 Value op_is_cooler(const Value& spec) {
     Value items = Value::array({});
     for (const Value& uri : member(spec, "uris").as_array()) {
@@ -778,7 +682,6 @@ int main(int argc, char** argv) {
             if (op == "range_query") return op_range_query(*spec, output);
             if (op == "is_cooler") return op_is_cooler(*spec);
             if (op == "dataset_read") return op_dataset_read(*spec, output);
-            if (op == "balance") return op_balance(*spec, output);
             throw std::runtime_error("unknown op " + op);
         });
     } catch (const std::exception& e) {

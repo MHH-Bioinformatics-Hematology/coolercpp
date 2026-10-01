@@ -11,7 +11,6 @@
 #include <variant>
 
 #include "coolercpp/errors.hpp"
-#include "numpy_compat.hpp"
 
 namespace coolercpp {
 
@@ -191,28 +190,6 @@ std::vector<std::string> natsorted(std::vector<std::string> items) {
         out.push_back(std::move(entry.second));
     }
     return out;
-}
-
-std::vector<std::pair<std::int64_t, std::int64_t>> partition(const std::int64_t start,
-                                                            const std::int64_t stop,
-                                                            const std::int64_t step) {
-    if (step <= 0) {
-        throw ValueError("range() arg 3 must not be zero");
-    }
-    std::vector<std::pair<std::int64_t, std::int64_t>> spans;
-    for (std::int64_t i = start; i < stop; i += step) {
-        spans.emplace_back(i, std::min(i + step, stop));
-    }
-    return spans;
-}
-
-double mad(const std::span<const double> data) {
-    const double centre = npy::median(data);
-    std::vector<double> deviations(data.size());
-    for (std::size_t i = 0; i < data.size(); ++i) {
-        deviations[i] = std::abs(data[i] - centre);
-    }
-    return npy::median(deviations);
 }
 
 }  // namespace coolercpp

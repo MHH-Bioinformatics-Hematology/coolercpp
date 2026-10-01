@@ -41,46 +41,6 @@ that runs the same call through cooler and through coolercpp.
 11. `create_cooler` accumulates the `sum` attribute from the input `count`
     column even when `count` is not among the stored `columns`.
     [create.S.sum_without_count_column]
-12. `balance_cooler` reports a run in which every bin was filtered out as
-    converged: the marginal has no nonzero entry, so the loop stops with
-    `var = 0.0`, which is below any tolerance, and `scale` is the mean of an
-    empty array, that is NaN. Every weight is NaN. With cooler's default
-    `min_nnz=10` this is what a small matrix gives.
-    [balance.T.toy.default]
-13. `scale` is the mean of the nonzero marginals of the last iteration before
-    they were normalized, read after the loop has ended, not the scale factor
-    of the weights that were returned. [balance.T.toy.unfiltered]
-14. `max_iters=0` warns about the iteration limit and then raises
-    `UnboundLocalError: cannot access local variable 'nzmarg' where it is not
-    associated with a value`, because the statement after the loop reads a
-    variable only the loop body assigns.
-    [balance.T.toy.error.max_iters_zero]
-15. The chunk edges run one chunk past `nnz`, so the last span reaches beyond
-    the pixel table, and an `nnz` that is an exact multiple of `chunksize`
-    gains a trailing empty span. `cis_only` instead uses `cooler.util.partition`
-    and gets exact spans. [balance.T.toy.chunksize_equals_nnz]
-16. `ignore_diags=True` zeroes the main diagonal only, because `True` compares
-    as 1; `ignore_diags=False` and `ignore_diags=0` both switch the filter off
-    but are stored differently in the stats (a bool and an int).
-    [balance.T.toy.ignore_diags_false, balance.T.toy.ignore_diags_zero]
-17. The MAD-max filter divides each chromosome's marginals by the median of its
-    positive ones. A chromosome without a single positive marginal is divided
-    by the median of an empty array, so its marginals become NaN, and NaN
-    compares false against the cutoff: those bins keep their weight instead of
-    being dropped. [balance.S.default]
-18. `cis_only` returns arrays for `scale`, `converged` and `var`, one entry per
-    chromosome, and stores them as array attributes of the weight column. A
-    chromosome with no data is marked converged, because its variance is forced
-    to 0.0. `nzmarg` outlives the chromosome loop, so a chromosome whose inner
-    loop does not run reuses the previous chromosome's value.
-    [balance.S.cis_only, balance.S.store.cis_only]
-19. `trans_only` records `cis_only: False` in the stats, so a stored trans-only
-    weight column cannot be told from a genome-wide one by its attributes.
-    [balance.G.trans_only]
-20. The `min_nnz`, `min_count` and MAD-max bin filters run through the base
-    filters only, which never zero the cis pixels. A `trans_only` run therefore
-    picks its bad bins from the whole matrix, cis data included.
-    [balance.G.trans_only]
 
 ## Deliberate deviations
 
@@ -106,19 +66,3 @@ that runs the same call through cooler and through coolercpp.
    bytes. This only affects HDF5 object header bytes, not the object tree,
    datatypes, layouts, filters, attributes or data.
 7. `Cooler.open()` (a raw h5py handle) has no counterpart.
-9. `balance_cooler` copies `x0` instead of taking the caller's array, filling
-   its NaNs with zeros and handing the same array back as the result. An `x0`
-   whose length differs from the number of bins raises `ValueError`, where
-   numpy raises an `IndexError` about a boolean index of the wrong length, and
-   `x0` is always float64, where a float32 `x0` makes cooler run the whole
-   balancing in float32.
-10. `map` becomes `threads`, and `use_lock` is accepted without effect; the
-    `cooler.parallel` pipeline is internal. `docs/API_MAPPING.md` explains both.
-11. The convergence warning carries cooler's message text but not its category:
-    `coolercpp::warn` has no categories, so the default handler prints
-    `UserWarning` where Python prints `ConvergenceWarning`, a `UserWarning`
-    subclass.
-12. cooler reopens the file, rereads every column of the bin table and rereads
-    the pixel span for every iteration of every chromosome. coolercpp opens the
-    file once and reads the chromosome ids once; the pixels are still reread per
-    iteration, so the memory profile is cooler's.

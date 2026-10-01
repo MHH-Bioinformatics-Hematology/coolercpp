@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <limits>
 #include <string_view>
 #include <system_error>
 
@@ -73,45 +72,6 @@ T buffered_pairwise_sum(const T* a, std::size_t n) {
 double pairwise_sum(const double* a, std::size_t n) { return buffered_pairwise_sum(a, n); }
 
 float pairwise_sum(const float* a, std::size_t n) { return buffered_pairwise_sum(a, n); }
-
-double mean(const std::span<const double> data) {
-    return pairwise_sum(data.data(), data.size()) / static_cast<double>(data.size());
-}
-
-double var(const std::span<const double> data) {
-    const double centre = mean(data);
-    std::vector<double> squares(data.size());
-    for (std::size_t i = 0; i < data.size(); ++i) {
-        const double deviation = data[i] - centre;
-        squares[i] = deviation * deviation;
-    }
-    return pairwise_sum(squares.data(), squares.size()) / static_cast<double>(squares.size());
-}
-
-double median(const std::span<const double> data) {
-    const std::size_t n = data.size();
-    if (n == 0) {
-        // np.median of an empty array warns and returns NaN.
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    // numpy partitions at the middle positions and at the last one, so that a
-    // NaN, which sorts last, turns the result into NaN
-    // (numpy/lib/_function_base_impl.py _median and _median_nancheck).
-    std::vector<double> part(data.begin(), data.end());
-    if (std::any_of(part.begin(), part.end(), [](const double v) { return std::isnan(v); })) {
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    const std::size_t half = n / 2;
-    std::nth_element(part.begin(), part.begin() + static_cast<std::ptrdiff_t>(half), part.end());
-    if (n % 2 == 1) {
-        return part[half];
-    }
-    // The mean of the two middle order statistics; np.mean of two elements is
-    // their sum divided by two.
-    const double upper = part[half];
-    const double lower = *std::max_element(part.begin(), part.begin() + static_cast<std::ptrdiff_t>(half));
-    return (lower + upper) / 2.0;
-}
 
 namespace {
 

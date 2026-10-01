@@ -10,7 +10,6 @@ The outputs use the same neutral format as the C++ driver: result.json plus
 
 import json
 import os
-import shutil
 import sys
 import time
 
@@ -362,38 +361,6 @@ def op_range_query(spec, output):
     raise ValueError("unknown range query access")
 
 
-def make_x0(spec, n_bins):
-    """The initial weight vector of a balance case, built from integers so that
-    both sides produce the same float64 values."""
-    values = np.empty(n_bins, dtype=np.float64)
-    for i in range(n_bins):
-        values[i] = ((i * 7919) % 1000 + 1) / 1000.0
-    every = spec.get("nan_every", 0)
-    if every:
-        values[::every] = np.nan
-    return values
-
-
-def op_balance(spec, output):
-    import cooler
-
-    if spec.get("copy_from"):
-        shutil.copyfile(spec["copy_from"], spec["uri"].split("::")[0])
-    c = cooler.Cooler(spec["uri"])
-    kwargs = dict(spec.get("options") or {})
-    kwargs.pop("threads", None)
-    if isinstance(kwargs.get("x0"), dict):
-        kwargs["x0"] = make_x0(kwargs["x0"], int(c.info["nbins"]))
-    bias, stats = cooler.balance_cooler(c, **kwargs)
-    return {
-        "kind": "multi",
-        "items": {
-            "bias": output.table(pd.DataFrame({"bias": bias})),
-            "stats": value_result(tagged(stats)),
-        },
-    }
-
-
 def op_is_cooler(spec, output):
     import cooler.fileops
 
@@ -419,7 +386,6 @@ def op_dataset_read(spec, output):
 
 
 OPS = {
-    "balance": op_balance,
     "dataset_read": op_dataset_read,
     "info": op_info,
     "extent": op_extent,

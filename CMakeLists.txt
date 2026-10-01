@@ -32,7 +32,6 @@ find_package(Threads REQUIRED)
 
 add_library(coolercpp
     src/api.cpp
-    src/balance.cpp
     src/create.cpp
     src/dtype.cpp
     src/fastio.cpp

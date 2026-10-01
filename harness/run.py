@@ -215,9 +215,7 @@ def run_case(case, args, resolver, out_root):
     if py_doc["result"]["kind"] == "error":
         record["notes"].append(f"both raise {py_doc['result']['type']}")
 
-    # Cases that declare output files (create, and balance with store=True) get
-    # their files compared structurally and read back by the other side.
-    if case.get("outputs") and py_doc["result"]["kind"] != "error" and cmp.ok:
+    if case["op"] == "create" and py_doc["result"]["kind"] == "created" and cmp.ok:
         outputs = case.get("outputs", [])
         for output in outputs:
             py_file = resolver.substitute(output, sides["py"]["files"], inputs_dir)

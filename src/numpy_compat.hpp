@@ -10,7 +10,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <span>
 #include <string>
 #include <vector>
 
@@ -21,21 +20,6 @@ namespace coolercpp::npy {
 // sequentially.
 [[nodiscard]] double pairwise_sum(const double* data, std::size_t n);
 [[nodiscard]] float pairwise_sum(const float* data, std::size_t n);
-
-// np.mean of a float64 array: the pairwise sum divided by the count, so an
-// empty array gives 0.0 / 0 = NaN, which is what numpy returns (with a
-// RuntimeWarning that cooler lets through).
-[[nodiscard]] double mean(std::span<const double> data);
-
-// np.var of a float64 array, in numpy's order (numpy/core/_methods.py _var):
-// the mean, then the squared deviations, then their pairwise sum divided by
-// the count.
-[[nodiscard]] double var(std::span<const double> data);
-
-// np.median of a float64 array: the middle order statistic, or the mean of the
-// two middle ones for an even count. NaN when the array holds a NaN or is
-// empty.
-[[nodiscard]] double median(std::span<const double> data);
 
 // repr() of a Python float.
 [[nodiscard]] std::string float_repr(double value);
