@@ -35,51 +35,51 @@
   "sha256": "67434919759c5b389227e2887b928f873f39f6c68b398e225e818838769a2104",
   "size": 1773757
  },
- "@hicx/Li_et_al_2015.cool": {
+ "@extra/Li_et_al_2015.cool": {
   "sha256": "06572ffab73e1b67518d9df28c5c3aebd3cebd99116ccab474ede31360d3aecb",
   "size": 13001960
  },
- "@hicx/Li_et_al_2015.h5": {
+ "@extra/Li_et_al_2015.h5": {
   "sha256": "e2fc44df156a805243cb83f065ff849a3d61ee60f61e773d61c302e18e80193f",
   "size": 14215139
  },
- "@hicx/hicBuildMatrix/multi_small_test_matrix.mcool": {
+ "@extra/hicBuildMatrix/multi_small_test_matrix.mcool": {
   "sha256": "c2f7f826c9eda637d68c9c6ce55aebefd0b49bdc9d722e70f68d954744cc961d",
   "size": 441383
  },
- "@hicx/hicBuildMatrix/restrictionFile/R1_R2_restrictionFile.cool": {
+ "@extra/hicBuildMatrix/restrictionFile/R1_R2_restrictionFile.cool": {
   "sha256": "96a4c72cf084b21874e2b2973d65bbf4c0578b7cf8b0aab0ffd92b2cef375636",
   "size": 1771771
  },
- "@hicx/hicConvertFormat/small_test_matrix_chr4.cool": {
+ "@extra/hicConvertFormat/small_test_matrix_chr4.cool": {
   "sha256": "08c41d94ba332c572924cf06b27070e44c15c48388abf311ed99a929cc493dcf",
   "size": 38908
  },
- "@hicx/hicCorrectMatrix/gm12878_KR.cool": {
+ "@extra/hicCorrectMatrix/gm12878_KR.cool": {
   "sha256": "aacaeaeb52f0e3bb01d332432b617ef5452a3af9bfeffe9cb16cab93dfa30758",
   "size": 2130904
  },
- "@hicx/hicDetectLoops/GSE63525_GM12878_insitu_primary_2_5mb.cool": {
+ "@extra/hicDetectLoops/GSE63525_GM12878_insitu_primary_2_5mb.cool": {
   "sha256": "1f6e27d0005019874e6f8af012de8a6e1f76791c77f9862fd40e36e4602900f0",
   "size": 1602554
  },
- "@hicx/hicDifferentialTAD/GSM2644947_Auxin2days-R1.100000_chr1_chr2.cool": {
+ "@extra/hicDifferentialTAD/GSM2644947_Auxin2days-R1.100000_chr1_chr2.cool": {
   "sha256": "4b1eaed2614adf1acc8f131deb83e69d35b5d5065ae57a7ac727b3e43352cd41",
   "size": 28429077
  },
- "@hicx/hicPCA/pearson_norm.cool": {
+ "@extra/hicPCA/pearson_norm.cool": {
   "sha256": "36263ef49fbbdebe5321bcb66694d2076bdba5756cf553526fcd4e90804c14d1",
   "size": 14106011
  },
- "@hicx/hicTADClassifier/gm12878_chr1.cool": {
+ "@extra/hicTADClassifier/gm12878_chr1.cool": {
   "sha256": "06db58bad3453ad2b67d7bceaf9dcbf14cfcabd5040bcc8a82c6f129228f93d7",
   "size": 79370717
  },
- "@hicx/matrix.mcool": {
+ "@extra/matrix.mcool": {
   "sha256": "ab50c72cb1dc1867530e10ee4ae015784963965e372ef0293185575bb3d392bc",
   "size": 2444203
  },
- "@hicx/small_test_matrix_50kb_res.cool": {
+ "@extra/small_test_matrix_50kb_res.cool": {
   "sha256": "9cab222a33ad836333075e8e418fabd9cdb8927b51783d3b7885f5a02ae8330c",
   "size": 105170
  }

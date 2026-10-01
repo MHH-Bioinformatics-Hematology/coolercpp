@@ -2,9 +2,8 @@
 // of h5py cooler relies on (file modes, link lookup, dataset slicing, dataset
 // creation with h5py's filter pipeline order, attribute decoding).
 //
-// Derived from HiCExplorer v4 cpp/core/src/hdf5_util.cpp (the Handle class,
-// guess_chunk, the string/enum type builders and the attribute reader), with
-// the blosc filter removed and the h5py modes and dataset creation added.
+// It carries the Handle class, guess_chunk, the string and enum type builders
+// and the attribute reader.
 
 #ifndef COOLERCPP_H5_HPP
 #define COOLERCPP_H5_HPP

@@ -6,19 +6,6 @@ coolercpp is BSD-3-Clause (`LICENSE`), the licence of cooler, whose API, file
 format and ported code it follows. The notices the projects below require are
 reproduced at the end of this document and summarised in `NOTICE`.
 
-## Code taken from HiCExplorer v4
-
-The HiCExplorer v4 C++ port (`HiCExplorer-v4/cpp/core`) had a validated cool
-reader and writer. The parts below were copied and adapted; coolercpp does not
-include any HiCExplorer header or link any HiCExplorer target.
-
-| coolercpp file | origin |
-|---|---|
-| `src/h5.hpp`, `src/h5.cpp` | `hdf5_util.hpp/.cpp`: the `Handle` class, `guess_chunk`, the fixed string and enum type builders and the attribute reader. The blosc filter was left out; h5py file modes and dataset creation were added. |
-| `src/json.cpp`, `include/coolercpp/json.hpp` | `json_lite.hpp/.cpp`, reworked for ordered objects, strict simplejson parsing and `simplejson.dumps` output. |
-| `src/numpy_compat.hpp`, `src/numpy_compat.cpp` | `numpy_compat.hpp/.cpp`: `pairwise_sum` and `float_repr`. |
-| `src/create.cpp` | The conventions validated in `cool_file.cpp` (`write_cool`): h5py's chunk rule, gzip-6 without shuffle for extra bin columns, the ENUM chrom column, numpy's accumulation order for the `sum` attribute. |
-
 ## Code derived from BSD-3-Clause projects
 
 Ports of cooler 0.10.2 (https://github.com/open2c/cooler, BSD-3-Clause):

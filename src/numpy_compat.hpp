@@ -1,8 +1,8 @@
 // Internal: bit exact reimplementations of the numpy and CPython behaviour
 // that cooler's stored results and query semantics depend on.
 //
-// pairwise_sum and float_repr are derived from HiCExplorer v4
-// cpp/core/src/numpy_compat.cpp.
+// pairwise_sum follows numpy's accumulation order and float_repr CPython's
+// shortest round-tripping form.
 
 #ifndef COOLERCPP_NUMPY_COMPAT_HPP
 #define COOLERCPP_NUMPY_COMPAT_HPP

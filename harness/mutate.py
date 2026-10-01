@@ -5,7 +5,7 @@ runs the cases the mutation targets with that copy first on PYTHONPATH, and
 requires at least one of them to fail. The installed package is never touched.
 
     python harness/mutate.py --driver BUILD/harness/coolercpp-harness \\
-        --hicx-data ~/src/HiCExplorer-v4/hicexplorer/test/test_data \\
+        --extra-data /path/to/extra/test/matrices \\
         --scratch DIR
 """
 
@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--driver", required=True)
-    parser.add_argument("--hicx-data", required=True)
+    parser.add_argument("--extra-data", required=True)
     parser.add_argument("--scratch", required=True)
     args = parser.parse_args()
 
@@ -52,7 +52,7 @@ def main():
         report = os.path.join(root, "report")
         proc = subprocess.run(
             [sys.executable, os.path.join(HERE, "run.py"), "--driver", args.driver,
-             "--hicx-data", args.hicx_data, "--out", report, "--filter", mutation["cases"]],
+             "--extra-data", args.extra_data, "--out", report, "--filter", mutation["cases"]],
             env=env, capture_output=True, text=True,
         )
         lines = proc.stdout.splitlines()

@@ -1,0 +1,52 @@
+site_name: coolercpp
+site_description: A C++ library for the cooler .cool, .mcool and .scool formats, with the API of the cooler library
+site_author: Joachim Wolff
+site_url: https://coolercpp.readthedocs.io/
+repo_url: https://github.com/MHH-Bioinformatics-Hematology/coolercpp
+repo_name: MHH-Bioinformatics-Hematology/coolercpp
+edit_uri: edit/main/docs/
+copyright: BSD-3-Clause License
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.integrate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.snippets:
+      base_path: ['.']
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Reading cool files: reading.md
+  - Writing cool files: writing.md
+  - File operations: files.md
+  - API reference: api.md
+  - cooler API mapping: API_MAPPING.md
+  - Deviations: DEVIATIONS.md
+  - Provenance: PROVENANCE.md

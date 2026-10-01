@@ -9,8 +9,8 @@
 // straight from a numeric HDF5 attribute, plus bytes for fixed length string
 // attributes (h5py returns numpy.bytes_ for those, which cooler never decodes).
 //
-// Derived from HiCExplorer v4 cpp/core/src/json_lite.cpp; reworked for
-// ordered objects, strict simplejson parsing and simplejson.dumps output.
+// The reader parses as simplejson does and keeps object order; the writer
+// reproduces simplejson.dumps output.
 
 #ifndef COOLERCPP_JSON_HPP
 #define COOLERCPP_JSON_HPP

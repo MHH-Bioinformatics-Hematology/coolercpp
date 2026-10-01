@@ -5,12 +5,12 @@ outputs, measures peak RSS and CPU time of both processes, applies the gates
 and writes a report.
 
     python harness/run.py --driver BUILD/harness/coolercpp-harness \\
-        --hicx-data ~/src/HiCExplorer-v4/hicexplorer/test/test_data \\
+        --extra-data /path/to/extra/test/matrices \\
         --out REPORT_DIR [--filter REGEX] [--cases FILE ...]
 
-Path tokens in case files: @hicx/ (HiCExplorer test data), @cooler/ (this
+Path tokens in case files: @extra/ (a directory of further test matrices), @cooler/ (this
 repository's tests/data), @work/ (the side's own output directory),
-@inputs/ (prepared input tables). Every @hicx/ and @cooler/ file must be listed
+@inputs/ (prepared input tables). Every @extra/ and @cooler/ file must be listed
 with its SHA-256 in harness/data_manifest.json.
 
 Gates: coolercpp may not use more CPU time than Python, and its peak RSS must
@@ -75,8 +75,8 @@ def run_measured(cmd, log_path):
 
 
 class Resolver:
-    def __init__(self, hicx, manifest):
-        self.roots = {"@hicx/": hicx, "@cooler/": os.path.join(REPO, "tests", "data")}
+    def __init__(self, extra, manifest):
+        self.roots = {"@extra/": extra, "@cooler/": os.path.join(REPO, "tests", "data")}
         self.manifest = manifest
         self.used = set()
 
@@ -120,7 +120,7 @@ def tokens_in(value, found):
     elif isinstance(value, list):
         for v in value:
             tokens_in(v, found)
-    elif isinstance(value, str) and (value.startswith("@hicx/") or value.startswith("@cooler/")):
+    elif isinstance(value, str) and (value.startswith("@extra/") or value.startswith("@cooler/")):
         found.add(value.split("::")[0])
     return found
 
@@ -323,7 +323,7 @@ def main():
     parser.add_argument("--driver", required=True)
     parser.add_argument("--measure", default=None,
                         help="coolercpp-measure; defaults to the one next to the driver")
-    parser.add_argument("--hicx-data", required=True)
+    parser.add_argument("--extra-data", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--cases", nargs="*", default=None)
     parser.add_argument("--filter", default=None)
@@ -352,7 +352,7 @@ def main():
     if os.path.exists(manifest_path):
         with open(manifest_path) as handle:
             manifest = json.load(handle)
-    resolver = Resolver(os.path.abspath(os.path.expanduser(args.hicx_data)), manifest)
+    resolver = Resolver(os.path.abspath(os.path.expanduser(args.extra_data)), manifest)
 
     if args.update_manifest:
         tokens = set()

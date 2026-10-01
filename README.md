@@ -71,7 +71,7 @@ peak RSS of both processes.
 
 ```sh
 python harness/run.py --driver build/harness/coolercpp-harness \
-    --hicx-data ~/src/HiCExplorer-v4/hicexplorer/test/test_data \
+    --extra-data /path/to/extra/test/matrices \
     --out report/
 ```
 

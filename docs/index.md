@@ -23,23 +23,3 @@ coolercpp::Cooler clr("matrix.mcool::/resolutions/10000");
 auto bins = clr.bins().fetch("chr1:10M-12M");
 auto m = clr.matrix({.balance = true, .sparse = true}).fetch("chr1");
 ```
-
-```{toctree}
-:maxdepth: 2
-:caption: Guide
-
-install
-reading
-writing
-files
-```
-
-```{toctree}
-:maxdepth: 2
-:caption: Reference
-
-api
-API_MAPPING
-DEVIATIONS
-PROVENANCE
-```

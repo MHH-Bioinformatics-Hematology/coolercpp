@@ -1,12 +1,12 @@
 {
  "cases": [
-  {"name": "DR.S.bin2_id.int32.chunks", "op": "dataset_read", "uri": "@hicx/small_test_matrix_50kb_res.cool", "path": "pixels/bin2_id", "dtype": "int32", "slices": [[0, 10000], [10000, 24108], [5, 5]]},
-  {"name": "DR.S.count.float64.whole", "op": "dataset_read", "uri": "@hicx/small_test_matrix_50kb_res.cool", "path": "pixels/count", "dtype": "float64", "slices": [[0, 24108]]},
-  {"name": "DR.S.bin1_offset.int64", "op": "dataset_read", "uri": "@hicx/small_test_matrix_50kb_res.cool", "path": "indexes/bin1_offset", "dtype": "int64", "slices": [[0, 3384], [3383, 3384]]},
+  {"name": "DR.S.bin2_id.int32.chunks", "op": "dataset_read", "uri": "@extra/small_test_matrix_50kb_res.cool", "path": "pixels/bin2_id", "dtype": "int32", "slices": [[0, 10000], [10000, 24108], [5, 5]]},
+  {"name": "DR.S.count.float64.whole", "op": "dataset_read", "uri": "@extra/small_test_matrix_50kb_res.cool", "path": "pixels/count", "dtype": "float64", "slices": [[0, 24108]]},
+  {"name": "DR.S.bin1_offset.int64", "op": "dataset_read", "uri": "@extra/small_test_matrix_50kb_res.cool", "path": "indexes/bin1_offset", "dtype": "int64", "slices": [[0, 3384], [3383, 3384]]},
   {"name": "DR.Y.bin1_offset.int32_file.int64", "op": "dataset_read", "uri": "@cooler/yeast.10kb.cool", "path": "indexes/bin1_offset", "dtype": "int64", "slices": [[0, 1227]]},
   {"name": "DR.Y.bin2_id.int32.chunks", "op": "dataset_read", "uri": "@cooler/yeast.10kb.cool", "path": "pixels/bin2_id", "dtype": "int32", "slices": [[0, 300000], [300000, 728311]]},
   {"name": "DR.Y.weight.float64.nan", "op": "dataset_read", "uri": "@cooler/yeast.10kb.cool", "path": "bins/weight", "dtype": "float64", "slices": [[0, 613], [613, 1226]]},
   {"name": "DR.T.mcool.count.int64", "op": "dataset_read", "uri": "@cooler/toy.symm.upper.2.mcool::/resolutions/2", "path": "pixels/count", "dtype": "int64", "slices": [[0, 48], [47, 48]]},
-  {"name": "DR.S.missing_dataset", "op": "dataset_read", "uri": "@hicx/small_test_matrix_50kb_res.cool", "path": "pixels/nope", "dtype": "int32", "slices": [[0, 1]], "messages": "type-only"}
+  {"name": "DR.S.missing_dataset", "op": "dataset_read", "uri": "@extra/small_test_matrix_50kb_res.cool", "path": "pixels/nope", "dtype": "int32", "slices": [[0, 1]], "messages": "type-only"}
  ]
 }
