@@ -3,7 +3,10 @@
 #ifndef COOLERCPP_UTIL_HPP
 #define COOLERCPP_UTIL_HPP
 
+#include <cstdint>
+#include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "coolercpp/json.hpp"
@@ -23,6 +26,16 @@ namespace coolercpp {
 
 // cooler.util.natsorted.
 [[nodiscard]] std::vector<std::string> natsorted(std::vector<std::string> items);
+
+// cooler.util.partition: [start, stop) cut into pieces of `step`, the last one
+// short. Like range(), an empty interval yields nothing.
+[[nodiscard]] std::vector<std::pair<std::int64_t, std::int64_t>> partition(std::int64_t start,
+                                                                          std::int64_t stop,
+                                                                          std::int64_t step);
+
+// cooler.util.mad: the median absolute deviation from the median, over the
+// whole array (the axis=None case). NaN for an empty array, as np.median is.
+[[nodiscard]] double mad(std::span<const double> data);
 
 }  // namespace coolercpp
 

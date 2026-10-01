@@ -35,6 +35,10 @@ COOLERCPP_DEFINE_ERROR(IndexError, Error)
 COOLERCPP_DEFINE_ERROR(TypeError, Error)
 COOLERCPP_DEFINE_ERROR(AttributeError, Error)
 COOLERCPP_DEFINE_ERROR(NotImplementedError, Error)
+// Raised where a cooler function reads a local variable that an empty loop
+// never assigned (balance_cooler with max_iters=0).
+COOLERCPP_DEFINE_ERROR(NameError, Error)
+COOLERCPP_DEFINE_ERROR(UnboundLocalError, NameError)
 // h5py raises OSError (or its subclass FileNotFoundError) for files that
 // cannot be opened; HDF5 library failures during reads and writes map here.
 COOLERCPP_DEFINE_ERROR(OSError, Error)
