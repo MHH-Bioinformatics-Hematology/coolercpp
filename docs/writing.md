@@ -6,11 +6,16 @@ Its options are the keyword arguments of the Python function, including the
 dtypes, the metadata, the assembly, the storage mode and the HDF5 dataset
 options.
 
-```cpp
-coolercpp::CreateOptions options;
-options.assembly = "hg38";
-options.ordered = true;
-coolercpp::create_cooler("out.cool", bins, pixels, options);
+The whole of `examples/create_cool.cpp`, which builds the two tables, writes
+the file and reads it back:
+
+```cpp title="examples/create_cool.cpp"
+--8<-- "examples/create_cool.cpp"
+```
+
+```
+$ create_cool out.cool
+wrote out.cool: 2 chromosomes, 5 bins, 5 pixels, sum 18
 ```
 
 Two fields have no counterpart in cooler and exist to make files reproducible:
@@ -23,7 +28,8 @@ library passes its own identity to.
 A multi-resolution file is a set of cooler groups under `/resolutions`, written
 by calling `create_cooler` with those URIs. `create_scool` writes the
 single-cell layout, the shared bin table with one group per cell under `/cells`,
-as `cooler.create_scool_cooler` does.
+as `cooler.create_scool_cooler` does. `examples/scool_fileops.cpp` on the
+[file level operations](files.md) page writes such a file.
 
 ## Threads
 

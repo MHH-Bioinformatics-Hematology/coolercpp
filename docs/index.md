@@ -17,9 +17,20 @@ step with cooler's. Programs that need them call cooler itself or build them on
 top of this library.
 
 ```cpp
+#include <iostream>
 #include <coolercpp/coolercpp.hpp>
 
-coolercpp::Cooler clr("matrix.mcool::/resolutions/10000");
-auto bins = clr.bins().fetch("chr1:10M-12M");
-auto m = clr.matrix({.balance = true, .sparse = true}).fetch("chr1");
+int main() {
+    const coolercpp::Cooler clr("matrix.mcool::/resolutions/10000");
+    const coolercpp::Table bins = clr.bins().fetch(coolercpp::Region{"chr1:10M-12M"});
+    const coolercpp::MatrixResult matrix =
+        clr.matrix({.balance = true, .sparse = true}).fetch(coolercpp::Region{"chr1"});
+    std::cout << bins.num_rows() << " bins, " << matrix.sparse().nnz() << " pixels\n";
+    return 0;
+}
 ```
+
+The programs under [`examples/`](https://github.com/MHH-Bioinformatics-Hematology/coolercpp/tree/main/examples)
+are complete and build with the library: `read_cool` reads a file,
+`create_cool` writes one, and `scool_fileops` writes a single-cell file and
+operates on its groups. The pages that follow show them in full.
