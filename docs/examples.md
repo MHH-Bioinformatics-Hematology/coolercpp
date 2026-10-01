@@ -16,6 +16,19 @@ cmake --build build -j
 A program outside this repository builds against an installed coolercpp as
 [the installation page](install.md) describes; the sources below need no change.
 
+## Quickstart
+
+`quickstart` opens a file and reads one region out of it.
+
+```cpp title="examples/quickstart.cpp"
+--8<-- "examples/quickstart.cpp"
+```
+
+```
+$ quickstart hg19.GM12878-MboI.matrix.2000kb.cool chr1:10M-60M
+chr1:10M-60M covers 25 bins and holds 335 of 25 x 25 pixels
+```
+
 ## Reading a file
 
 `read_cool` opens a cool or mcool URI, prints what the file holds, and fetches a
@@ -32,6 +45,26 @@ chromosomes: 2, bins: 5
 non-zero pixels: 5
 bins on chrA: 3 (chrom start end )
 matrix 3 x 3, first row: 5 3 0
+```
+
+## The selectors
+
+`selectors` goes through the four selectors of a `Cooler` object and the forms
+each one returns.
+
+```cpp title="examples/selectors.cpp"
+--8<-- "examples/selectors.cpp"
+```
+
+```
+$ selectors out.cool chrA chrB
+chroms: chrA(25) chrB(17)
+bins of chrA: 3, columns chrom start end
+pixels of chrA: 4, first chrA:0 to chrA:0 = 5
+dense 3 x 3, first row: 5 3 0
+sparse holds 4 entries
+pixels of the pair chrA x chrB: 1, first chrA:20 to chrB:0 = 2
+no weight column in this file, so nothing to balance
 ```
 
 ## Writing a file

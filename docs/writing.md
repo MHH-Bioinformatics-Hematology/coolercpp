@@ -6,15 +6,14 @@ Its options are the keyword arguments of the Python function, including the
 dtypes, the metadata, the assembly, the storage mode and the HDF5 dataset
 options.
 
-```cpp
-coolercpp::CreateOptions options;
-options.assembly = "hg38";
-options.ordered = true;
-coolercpp::create_cooler("out.cool", bins, pixels, options);
+```cpp title="examples/create_cool.cpp"
+--8<-- "examples/create_cool.cpp"
 ```
 
-`create_cool` on [the examples page](examples.md#writing-a-file) is a complete
-program that builds the two tables, writes the file and reads it back.
+```
+$ create_cool out.cool
+wrote out.cool: 2 chromosomes, 5 bins, 5 pixels, sum 18
+```
 
 Two fields have no counterpart in cooler and exist to make files reproducible:
 `creation_date` fixes that attribute instead of writing the current time, and

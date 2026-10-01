@@ -16,18 +16,13 @@ the format, and a C++ copy of them would be a second implementation to keep in
 step with cooler's. Programs that need them call cooler itself or build them on
 top of this library.
 
-```cpp
-#include <iostream>
-#include <coolercpp/coolercpp.hpp>
+```cpp title="examples/quickstart.cpp"
+--8<-- "examples/quickstart.cpp"
+```
 
-int main() {
-    const coolercpp::Cooler clr("matrix.mcool::/resolutions/10000");
-    const coolercpp::Table bins = clr.bins().fetch(coolercpp::Region{"chr1:10M-12M"});
-    const coolercpp::MatrixResult matrix =
-        clr.matrix({.balance = true, .sparse = true}).fetch(coolercpp::Region{"chr1"});
-    std::cout << bins.num_rows() << " bins, " << matrix.sparse().nnz() << " pixels\n";
-    return 0;
-}
+```
+$ quickstart hg19.GM12878-MboI.matrix.2000kb.cool chr1:10M-60M
+chr1:10M-60M covers 25 bins and holds 335 of 25 x 25 pixels
 ```
 
 [The examples page](examples.md) carries three complete programs that build with
