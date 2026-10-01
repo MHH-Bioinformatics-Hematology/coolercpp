@@ -6,10 +6,16 @@ file-format-compatible with it: files it writes are read by cooler into the
 same data and match cooler's own output structurally, and it reads
 cooler-written files into the same data.
 
-Status: milestone 1 of 4. `Cooler` with its metadata, the `chroms`, `bins`,
-`pixels` and `matrix` selectors, `create_cooler` with all of its options, and
-multi-resolution files. Balancing, coarsening, zoomify, merging, scool files,
-file operations and the remaining utilities follow in milestones 2 to 4.
+Scope: the cool format. `Cooler` with its metadata, the `chroms`, `bins`,
+`pixels` and `matrix` selectors, `create_cooler` with all of its options,
+multi-resolution and single-cell files, the file level operations and the
+utilities for URIs, regions, chromosome sizes and bin tables.
+
+cooler's analysis tools stay out of the library: iterative correction
+(`balance_cooler`), coarsening, zoomify and merging are operations on matrices
+rather than access to the format, and a C++ copy of them would be a second
+implementation to keep in step with cooler's. Programs that need them call
+cooler itself or implement them on top of this library.
 
 ```cpp
 #include <coolercpp/coolercpp.hpp>

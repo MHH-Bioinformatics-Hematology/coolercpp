@@ -1,8 +1,10 @@
 # Python to C++ API mapping
 
-coolercpp reproduces the programmatic API of cooler 0.10.2. Names, parameters
-and semantics follow the Python; the spelling follows C++. This table lists
-what exists so far (milestone 1) and is extended with every milestone.
+coolercpp reproduces the part of the programmatic API of cooler 0.10.2 that
+reads and writes the format. Names, parameters and semantics follow the
+Python; the spelling follows C++. cooler's analysis tools (`balance_cooler`,
+`coarsen_cooler`, `zoomify_cooler`, `merge_coolers`) are out of scope, as the
+README explains.
 
 Conventions:
 
